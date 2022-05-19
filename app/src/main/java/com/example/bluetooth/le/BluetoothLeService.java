@@ -32,6 +32,8 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.sql.Array;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -146,6 +148,18 @@ public class BluetoothLeService extends Service {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
+                int decimal,i,j;
+                String finaldata;
+                String value = stringBuilder.toString().replaceAll(" ","").substring(2,10);
+                j = value.length()-1;
+                StringBuilder sb = new StringBuilder();
+                for (i=value.length()-1; i>0; i-=2)
+                {
+                    sb.append(String.valueOf(value.charAt(i-1)));
+                    sb.append(String.valueOf(value.charAt(i)));
+                }
+                finaldata = sb.toString();
+                System.out.println(Integer.parseInt(finaldata,16));
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
             }
         }

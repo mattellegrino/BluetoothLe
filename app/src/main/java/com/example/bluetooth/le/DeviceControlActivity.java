@@ -280,10 +280,7 @@ public class DeviceControlActivity extends Activity {
                         LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
                 currentCharaData.put(LIST_UUID, uuid);
                 gattCharacteristicGroupData.add(currentCharaData);
-                if(uuid.equals("00000007-0000-3512-2118-0009af100700"))
-                {
-                    System.out.println(Arrays.toString(gattCharacteristic.getValue()));
-                }
+
             }
             mGattCharacteristics.add(charas);
             gattCharacteristicData.add(gattCharacteristicGroupData);
