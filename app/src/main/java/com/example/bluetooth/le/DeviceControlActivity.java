@@ -16,6 +16,9 @@
 
 package com.example.bluetooth.le;
 
+import static com.example.bluetooth.le.SampleGattAttributes.HEART_RATE_SERVICE;
+import static com.example.bluetooth.le.SampleGattAttributes.STEPS_SERVICE;
+
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -39,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * For a given BLE device, this Activity provides the user interface to connect, display data,
@@ -107,7 +111,9 @@ public class DeviceControlActivity extends Activity {
                 clearUI();
             } else if (BluetoothLeService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
-                displayGattServices(mBluetoothLeService.getSupportedGattServices());
+                List<BluetoothGattService> listservices = mBluetoothLeService.getSupportedGattServices().stream()
+                        .filter( s -> (s.getUuid().toString().equals(HEART_RATE_SERVICE) || (s.getUuid().toString().equals(STEPS_SERVICE)))).collect(Collectors.toList());
+                displayGattServices(listservices);
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
             }
@@ -273,15 +279,21 @@ public class DeviceControlActivity extends Activity {
 
             // Loops through available Characteristics.
             for (BluetoothGattCharacteristic gattCharacteristic : gattCharacteristics) {
+
                 charas.add(gattCharacteristic);
                 HashMap<String, String> currentCharaData = new HashMap<String, String>();
                 uuid = gattCharacteristic.getUuid().toString();
-                currentCharaData.put(
-                        LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
-                currentCharaData.put(LIST_UUID, uuid);
-                gattCharacteristicGroupData.add(currentCharaData);
+                String characteristicName = SampleGattAttributes.lookup(uuid,unknownCharaString);
+                if(!characteristicName.equals(unknownCharaString))
+                {
+                    currentCharaData.put(
+                            LIST_NAME, characteristicName);
+                    currentCharaData.put(LIST_UUID, uuid);
+                    gattCharacteristicGroupData.add(currentCharaData);
+                }
             }
             mGattCharacteristics.add(charas);
+            gattCharacteristicGroupData.stream().filter( c -> !c.values().equals(unknownCharaString)).collect(Collectors.toList());
             gattCharacteristicData.add(gattCharacteristicGroupData);
         }
 

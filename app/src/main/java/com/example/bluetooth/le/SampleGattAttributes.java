@@ -27,11 +27,14 @@ public class SampleGattAttributes {
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
     public static String STEPS = "00000007-0000-3512-2118-0009af100700";
     public static String BATTERY_INFO = "00000006-0000-3512-2118-0009af100700";
+    public static String HEART_RATE_SERVICE = "0000180d-0000-1000-8000-00805f9b34fb";
+    public static String STEPS_SERVICE = "0000fee0-0000-1000-8000-00805f9b34fb";
 
     static {
         // Sample Services.
         attributes.put("0000180d-0000-1000-8000-00805f9b34fb", "Heart Rate Service");
         attributes.put("0000180a-0000-1000-8000-00805f9b34fb", "Device Information Service");
+        attributes.put("0000fee0-0000-1000-8000-00805f9b34fb","Device General Features");
         // Sample Characteristics.
         attributes.put(HEART_RATE_MEASUREMENT, "Heart Rate Measurement");
         attributes.put(STEPS, "Realtime Steps");
