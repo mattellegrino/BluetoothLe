@@ -67,6 +67,9 @@ public class BluetoothLeService extends Service {
 
     public final static UUID UUID_HEART_RATE_MEASUREMENT =
             UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
+    public final static UUID UUID_STEPS_MEASUREMENT =
+            UUID.fromString(SampleGattAttributes.STEPS);
+
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
@@ -144,22 +147,26 @@ public class BluetoothLeService extends Service {
         } else {
             // For all other profiles, writes the data formatted in HEX.
             final byte[] data = characteristic.getValue();
+            int i;
             if (data != null && data.length > 0) {
                 final StringBuilder stringBuilder = new StringBuilder(data.length);
                 for(byte byteChar : data)
                     stringBuilder.append(String.format("%02X ", byteChar));
-                int decimal,i,j;
-                String finaldata;
-                String value = stringBuilder.toString().replaceAll(" ","").substring(2,10);
-                j = value.length()-1;
-                StringBuilder sb = new StringBuilder();
-                for (i=value.length()-1; i>0; i-=2)
+
+                if(UUID_STEPS_MEASUREMENT.equals(characteristic.getUuid()))
                 {
-                    sb.append(String.valueOf(value.charAt(i-1)));
-                    sb.append(String.valueOf(value.charAt(i)));
+                    String finaldata;
+                    String value = stringBuilder.toString().replaceAll(" ","").substring(2,10);
+                    StringBuilder sb = new StringBuilder();
+                    for (i=value.length()-1; i>0; i-=2)
+                    {
+                        sb.append(String.valueOf(value.charAt(i-1)));
+                        sb.append(String.valueOf(value.charAt(i)));
+                    }
+                    finaldata = sb.toString();
+                    System.out.println(Integer.parseInt(finaldata,16));
+                    intent.putExtra(EXTRA_DATA, new String(data) + "\n" + finaldata);
                 }
-                finaldata = sb.toString();
-                System.out.println(Integer.parseInt(finaldata,16));
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
             }
         }
