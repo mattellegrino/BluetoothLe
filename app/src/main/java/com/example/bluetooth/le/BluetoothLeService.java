@@ -164,9 +164,9 @@ public class BluetoothLeService extends Service {
                         sb.append(String.valueOf(value.charAt(i)));
                     }
                     finaldata = sb.toString();
-                    System.out.println(Integer.parseInt(finaldata,16));
-                    intent.putExtra(EXTRA_DATA, new String(data) + "\n" + finaldata);
+                    intent.putExtra(EXTRA_DATA, new String(data) + "\n" + Integer.parseInt(finaldata,16));
                 }
+                else
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
             }
         }
