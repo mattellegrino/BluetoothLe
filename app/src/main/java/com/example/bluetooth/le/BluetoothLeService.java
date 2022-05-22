@@ -69,6 +69,8 @@ public class BluetoothLeService extends Service {
             UUID.fromString(SampleGattAttributes.HEART_RATE_MEASUREMENT);
     public final static UUID UUID_STEPS_MEASUREMENT =
             UUID.fromString(SampleGattAttributes.STEPS);
+    public final static UUID UUID_BATTERY_INFO =
+            UUID.fromString(SampleGattAttributes.BATTERY_INFO);
 
 
     // Implements callback methods for GATT events that the app cares about.  For example,
@@ -132,6 +134,7 @@ public class BluetoothLeService extends Service {
         // carried out as per profile specifications:
         // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
         if (UUID_HEART_RATE_MEASUREMENT.equals(characteristic.getUuid())) {
+            System.out.println("Hear Rate Entrato");
             int flag = characteristic.getProperties();
             int format = -1;
             if ((flag & 0x01) != 0) {
@@ -165,6 +168,11 @@ public class BluetoothLeService extends Service {
                     }
                     finaldata = sb.toString();
                     intent.putExtra(EXTRA_DATA, new String(data) + "\n" + Integer.parseInt(finaldata,16));
+                }
+                else if (UUID_BATTERY_INFO.equals(characteristic.getUuid()))
+                {
+                   System.out.println("Valore esadecimale Battery Info: " + stringBuilder.toString());
+
                 }
                 else
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());

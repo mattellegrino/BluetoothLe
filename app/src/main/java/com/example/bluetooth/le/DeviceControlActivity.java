@@ -283,17 +283,13 @@ public class DeviceControlActivity extends Activity {
                 charas.add(gattCharacteristic);
                 HashMap<String, String> currentCharaData = new HashMap<String, String>();
                 uuid = gattCharacteristic.getUuid().toString();
-                String characteristicName = SampleGattAttributes.lookup(uuid,unknownCharaString);
-                if(!characteristicName.equals(unknownCharaString))
-                {
-                    currentCharaData.put(
-                            LIST_NAME, characteristicName);
-                    currentCharaData.put(LIST_UUID, uuid);
-                    gattCharacteristicGroupData.add(currentCharaData);
-                }
+                currentCharaData.put(
+                        LIST_NAME, SampleGattAttributes.lookup(uuid, unknownCharaString));
+                currentCharaData.put(LIST_UUID, uuid);
+                gattCharacteristicGroupData.add(currentCharaData);
             }
             mGattCharacteristics.add(charas);
-            gattCharacteristicGroupData.stream().filter( c -> !c.values().equals(unknownCharaString)).collect(Collectors.toList());
+            //gattCharacteristicGroupData.stream().filter( c -> !c.values().equals(unknownCharaString)).collect(Collectors.toList());
             gattCharacteristicData.add(gattCharacteristicGroupData);
         }
 
