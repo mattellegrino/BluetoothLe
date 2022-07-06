@@ -22,13 +22,17 @@ import java.util.HashMap;
  * This class includes a small subset of standard GATT attributes for demonstration purposes.
  */
 public class SampleGattAttributes {
+    public static final String BASE_UUID = "0000%s-0000-1000-8000-00805f9b34fb";
     private static HashMap<String, String> attributes = new HashMap();
     public static String HEART_RATE_MEASUREMENT = "00002a37-0000-1000-8000-00805f9b34fb";
+    public static String UUID_CHARACTERISTIC_DEVICE_NAME = "00002a00-0000-1000-8000-00805f9b34fb";
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
     public static String STEPS = "00000007-0000-3512-2118-0009af100700";
     public static String BATTERY_INFO = "00000006-0000-3512-2118-0009af100700";
+    public static String UUID_CHARACTERISTIC_AUTH = "00000009-0000-3512-2118-0009af100700";
     public static String HEART_RATE_SERVICE = "0000180d-0000-1000-8000-00805f9b34fb";
     public static String STEPS_SERVICE = "0000fee0-0000-1000-8000-00805f9b34fb";
+    public static String UUID_DESCRIPTOR_GATT_CLIENT_CHARACTERISTIC_CONFIGURATION = "00002902-0000-1000-8000-00805f9b34fb";
 
     static {
         // Sample Services.
@@ -37,8 +41,11 @@ public class SampleGattAttributes {
         attributes.put("0000fee0-0000-1000-8000-00805f9b34fb","Device General Features");
         // Sample Characteristics.
         attributes.put(HEART_RATE_MEASUREMENT, "Heart Rate Measurement");
+        attributes.put(UUID_CHARACTERISTIC_AUTH, "Authentication");
+        attributes.put(UUID_CHARACTERISTIC_DEVICE_NAME,"Device Name");
         attributes.put(STEPS, "Realtime Steps");
         attributes.put(BATTERY_INFO, "Battery Info");
+        attributes.put(UUID_DESCRIPTOR_GATT_CLIENT_CHARACTERISTIC_CONFIGURATION,"Descriptor Client Characteristic Configuration");
         attributes.put("00002a29-0000-1000-8000-00805f9b34fb", "Manufacturer Name String");
     }
 

@@ -16,6 +16,7 @@
 
 package com.example.bluetooth.le;
 
+import android.annotation.SuppressLint;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -28,14 +29,28 @@ import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
-import java.sql.Array;
+import org.apache.commons.lang3.ArrayUtils;
+
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
+
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -71,7 +86,11 @@ public class BluetoothLeService extends Service {
             UUID.fromString(SampleGattAttributes.STEPS);
     public final static UUID UUID_BATTERY_INFO =
             UUID.fromString(SampleGattAttributes.BATTERY_INFO);
+    public final static UUID UUID_AUTHENTICATION =
+            UUID.fromString(SampleGattAttributes.UUID_CHARACTERISTIC_AUTH);
+    public static final UUID UUID_DESCRIPTOR_GATT_CLIENT_CHARACTERISTIC_CONFIGURATION = UUID.fromString((SampleGattAttributes.UUID_DESCRIPTOR_GATT_CLIENT_CHARACTERISTIC_CONFIGURATION));
 
+    byte[] authKeyBytes = new byte[]{0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45};
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
@@ -80,10 +99,13 @@ public class BluetoothLeService extends Service {
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String intentAction;
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+
                 intentAction = ACTION_GATT_CONNECTED;
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(intentAction);
                 Log.i(TAG, "Connected to GATT server.");
+                //make auth
+
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" +
                         mBluetoothGatt.discoverServices());
@@ -99,16 +121,52 @@ public class BluetoothLeService extends Service {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
+
+                new Timer().schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        BluetoothGattCharacteristic authcharacteristic = mBluetoothGatt.getService(UUID.fromString("0000fee1-0000-1000-8000-00805f9b34fb")).getCharacteristic(UUID.fromString("00000009-0000-3512-2118-0009af100700"));
+                        System.out.println("Authentication");
+                        //activate notification
+                        boolean result = mBluetoothGatt.setCharacteristicNotification(authcharacteristic, true);
+                        if (result) {
+                            for (BluetoothGattDescriptor descriptor : authcharacteristic.getDescriptors()){
+                                if (descriptor.getUuid().equals(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))) {
+                                    Log.i("INFO", "Found NOTIFICATION BluetoothGattDescriptor: " + descriptor.getUuid().toString());
+                                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                                }
+                            }
+                        } else {
+                            Log.e("Autenthication","Unable to enable notification for " + authcharacteristic.getUuid());
+                        }
+
+                        byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0x08}, authKeyBytes);
+
+
+                        //write characteristic
+
+                        //TODO: expectsResult should return false if PROPERTY_WRITE_NO_RESPONSE is true, but this leads to timing issues
+
+                        writeValue(mBluetoothGatt, authcharacteristic, sendKey);
+                        // here goes your code to delay
+                    }
+                }, 300L);
+
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+
+
+
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
+
         }
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt,
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
@@ -117,9 +175,82 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
+                int a = 0;
+            while(a == 0) {
+            if (UUID_AUTHENTICATION.equals(characteristic.getUuid())) {
+                try {
+                    byte[] value = characteristic.getValue();
+                    System.out.println(value[0] + " " + value[1] + " " + value[2]);
+                    if (value[0] == HuamiService.AUTH_RESPONSE &&
+                            value[1] == HuamiService.AUTH_SEND_KEY &&
+                            value[2] == HuamiService.AUTH_SUCCESS) {
+                        System.out.println("Autentic part 1");
+                        //TransactionBuilder builder = createTransactionBuilder("Sending the secret key to the device");
+                        writeValue(mBluetoothGatt, characteristic, new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0});
+                        a=1;
+                        //huamiSupport.performImmediately(builder);
+                    } else if (value[0] == HuamiService.AUTH_RESPONSE &&
+                            (value[1] & 0x0f) == HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER &&
+                            value[2] == HuamiService.AUTH_SUCCESS) {
+
+                        byte[] eValue = handleAESAuth(value, getSecretKey());
+                        byte[] responseValue = ArrayUtils.addAll(
+                                new byte[]{(byte)(HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER), 0}, eValue);
+
+                        //ransactionBuilder builder = createTransactionBuilder("Sending the encrypted random key to the device");
+                        writeValue(mBluetoothGatt, characteristic, responseValue);
+                        System.out.println("Autentic part 2");
+                        a=1;
+                        //huamiSupport.setCurrentTimeWithService(builder);
+                        // huamiSupport.performImmediately(builder);
+                    } else if (value[0] == HuamiService.AUTH_RESPONSE &&
+                            (value[1] & 0x0f) == HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER &&
+                            value[2] == HuamiService.AUTH_SUCCESS) {
+                        //TransactionBuilder builder = createTransactionBuilder("Authenticated, now initialize phase 2");
+                       /* builder.add(new SetDeviceStateAction(getDevice(), GBDevice.State.INITIALIZING, getContext()));
+                        huamiSupport.enableFurtherNotifications(builder, true);
+                        huamiSupport.requestDeviceInfo(builder);
+                        huamiSupport.phase2Initialize(builder);
+                        huamiSupport.phase3Initialize(builder);
+                        huamiSupport.setInitialized(builder);
+                        huamiSupport.performImmediately(builder);*/
+                        a=1;
+                        System.out.println("Autenticato");
+                    }
+                } catch (Exception e) {
+
+                }
+            }
+            }
+
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i + 1), 16));
+        }
+        return data;
+    }
+
+    protected byte[] getSecretKey() {
+        byte[] authKeyBytes = new byte[]{0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45};
+
+        String authKey = "FQK5uuUZ7TZmOLM1";
+
+            byte[] srcBytes = authKey.trim().getBytes();
+            if (authKey.length() == 34 && authKey.substring(0, 2).equals("0x")) {
+                srcBytes = hexStringToByteArray(authKey.substring(2));
+            }
+            System.arraycopy(srcBytes, 0, authKeyBytes, 0, Math.min(srcBytes.length, 16));
+
+
+        return authKeyBytes;
+    }
 
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
@@ -129,6 +260,7 @@ public class BluetoothLeService extends Service {
     private void broadcastUpdate(final String action,
                                  final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
+
 
         // This is special handling for the Heart Rate Measurement profile.  Data parsing is
         // carried out as per profile specifications:
@@ -186,6 +318,25 @@ public class BluetoothLeService extends Service {
             return BluetoothLeService.this;
         }
     }
+
+    protected boolean writeValue(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, byte[] value) {
+
+            Log.d("Authentication","writing to characteristic: " + characteristic.getUuid() + ": " + (Arrays.toString(value)));
+
+        if (characteristic.setValue(value)) {
+            gatt.writeCharacteristic(characteristic);
+        }
+        return false;
+    }
+
+    private byte[] handleAESAuth(byte[] value, byte[] secretKey) throws InvalidKeyException, NoSuchPaddingException, NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException {
+        byte[] mValue = Arrays.copyOfRange(value, 3, 19);
+        @SuppressLint("GetInstance") Cipher ecipher = Cipher.getInstance("AES/ECB/NoPadding");
+        SecretKeySpec newKey = new SecretKeySpec(secretKey, "AES");
+        ecipher.init(Cipher.ENCRYPT_MODE, newKey);
+        return ecipher.doFinal(mValue);
+    }
+
 
     @Override
     public IBinder onBind(Intent intent) {
