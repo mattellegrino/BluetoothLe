@@ -192,10 +192,15 @@ public class DeviceScanActivity extends ListActivity {
             mInflator = DeviceScanActivity.this.getLayoutInflater();
         }
 
-        public void addDevice(BluetoothDevice device) {
+        public boolean addDevice(BluetoothDevice device) {
+            String deviceName = device.getName();
             if(!mLeDevices.contains(device)) {
-                mLeDevices.add(device);
+                if(deviceName != null && deviceName.length() > 0 && deviceName.equals("Mi Band 3")) {
+                    mLeDevices.add(device);
+                    return true;
+                }
             }
+            return false;
         }
 
         public BluetoothDevice getDevice(int position) {
@@ -256,7 +261,7 @@ public class DeviceScanActivity extends ListActivity {
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    mLeDeviceListAdapter.addDevice(device);
+                    if(mLeDeviceListAdapter.addDevice(device))
                     mLeDeviceListAdapter.notifyDataSetChanged();
                 }
             });
