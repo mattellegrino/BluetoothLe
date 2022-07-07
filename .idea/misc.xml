@@ -3,7 +3,9 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="app/src/main/res/drawable/btn_background.xml" value="0.222" />
         <entry key="app/src/main/res/layout/actionbar_indeterminate_progress.xml" value="0.1640625" />
+        <entry key="app/src/main/res/layout/activity_main.xml" value="0.22" />
         <entry key="app/src/main/res/layout/gatt_services_characteristics.xml" value="0.1640625" />
         <entry key="app/src/main/res/layout/listitem_device.xml" value="0.1640625" />
         <entry key="app/src/main/res/menu/gatt_services.xml" value="0.259375" />
