@@ -36,6 +36,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -140,7 +141,7 @@ public class BluetoothLeService extends Service {
                             Log.e("Autenthication","Unable to enable notification for " + authcharacteristic.getUuid());
                         }
 
-                        byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0x08}, authKeyBytes);
+                        byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
 
 
                         //write characteristic
@@ -175,38 +176,39 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
-                int a = 0;
-            while(a == 0) {
-            if (UUID_AUTHENTICATION.equals(characteristic.getUuid())) {
-                try {
-                    byte[] value = characteristic.getValue();
-                    System.out.println(value[0] + " " + value[1] + " " + value[2]);
-                    if (value[0] == HuamiService.AUTH_RESPONSE &&
-                            value[1] == HuamiService.AUTH_SEND_KEY &&
-                            value[2] == HuamiService.AUTH_SUCCESS) {
-                        System.out.println("Autentic part 1");
-                        //TransactionBuilder builder = createTransactionBuilder("Sending the secret key to the device");
-                        writeValue(mBluetoothGatt, characteristic, new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0});
-                        a=1;
-                        //huamiSupport.performImmediately(builder);
-                    } else if (value[0] == HuamiService.AUTH_RESPONSE &&
-                            (value[1] & 0x0f) == HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER &&
-                            value[2] == HuamiService.AUTH_SUCCESS) {
 
-                        byte[] eValue = handleAESAuth(value, getSecretKey());
-                        byte[] responseValue = ArrayUtils.addAll(
-                                new byte[]{(byte)(HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER), 0}, eValue);
 
-                        //ransactionBuilder builder = createTransactionBuilder("Sending the encrypted random key to the device");
-                        writeValue(mBluetoothGatt, characteristic, responseValue);
-                        System.out.println("Autentic part 2");
-                        a=1;
-                        //huamiSupport.setCurrentTimeWithService(builder);
-                        // huamiSupport.performImmediately(builder);
-                    } else if (value[0] == HuamiService.AUTH_RESPONSE &&
-                            (value[1] & 0x0f) == HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER &&
-                            value[2] == HuamiService.AUTH_SUCCESS) {
-                        //TransactionBuilder builder = createTransactionBuilder("Authenticated, now initialize phase 2");
+
+                if (UUID_AUTHENTICATION.equals(characteristic.getUuid())) {
+                    try {
+                        byte[] value = characteristic.getValue();
+                        System.out.println(value[0] + " " + value[1] + " " + value[2]);
+                        if (value[0] == HuamiService.AUTH_RESPONSE &&
+                                value[1] == HuamiService.AUTH_SEND_KEY &&
+                                value[2] == HuamiService.AUTH_SUCCESS) {
+                            System.out.println("Autentic part 1");
+                            //TransactionBuilder builder = createTransactionBuilder("Sending the secret key to the device");
+                            writeValue(mBluetoothGatt, characteristic, new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0});
+
+                            //huamiSupport.performImmediately(builder);
+                        } else if (value[0] == HuamiService.AUTH_RESPONSE &&
+                                (value[1] & 0x0f) == HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER &&
+                                value[2] == HuamiService.AUTH_SUCCESS) {
+
+                            byte[] eValue = handleAESAuth(value, getSecretKey());
+                            byte[] responseValue = ArrayUtils.addAll(
+                                    new byte[]{(byte) (HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER), 0}, eValue);
+
+                            //ransactionBuilder builder = createTransactionBuilder("Sending the encrypted random key to the device");
+                            writeValue(mBluetoothGatt, characteristic, responseValue);
+                            System.out.println("Autentic part 2");
+
+                            //huamiSupport.setCurrentTimeWithService(builder);
+                            // huamiSupport.performImmediately(builder);
+                        } else if (value[0] == HuamiService.AUTH_RESPONSE &&
+                                (value[1] & 0x0f) == HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER &&
+                                value[2] == HuamiService.AUTH_SUCCESS) {
+                            //TransactionBuilder builder = createTransactionBuilder("Authenticated, now initialize phase 2");
                        /* builder.add(new SetDeviceStateAction(getDevice(), GBDevice.State.INITIALIZING, getContext()));
                         huamiSupport.enableFurtherNotifications(builder, true);
                         huamiSupport.requestDeviceInfo(builder);
@@ -214,14 +216,33 @@ public class BluetoothLeService extends Service {
                         huamiSupport.phase3Initialize(builder);
                         huamiSupport.setInitialized(builder);
                         huamiSupport.performImmediately(builder);*/
-                        a=1;
-                        System.out.println("Autenticato");
-                    }
-                } catch (Exception e) {
+                            System.out.println("Autenticato");
+                        }
+                    } catch (Exception e) {
 
+                    }
                 }
-            }
-            }
+
+                final byte[] data = characteristic.getValue();
+                int i;
+                if (data != null && data.length > 0) {
+                    final StringBuilder stringBuilder = new StringBuilder(data.length);
+                    for (byte byteChar : data)
+                        stringBuilder.append(String.format("%02X ", byteChar));
+
+                    if (UUID_STEPS_MEASUREMENT.equals(characteristic.getUuid())) {
+
+                        String finaldata;
+                        String value = stringBuilder.toString().replaceAll(" ", "").substring(2, 10);
+                        StringBuilder sb = new StringBuilder();
+                        for (i = value.length() - 1; i > 0; i -= 2) {
+                            sb.append(String.valueOf(value.charAt(i - 1)));
+                            sb.append(String.valueOf(value.charAt(i)));
+                        }
+                        finaldata = sb.toString();
+                        System.out.println(Integer.parseInt(finaldata, 16));
+                    }
+                }
 
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
@@ -240,6 +261,7 @@ public class BluetoothLeService extends Service {
     protected byte[] getSecretKey() {
         byte[] authKeyBytes = new byte[]{0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x40, 0x41, 0x42, 0x43, 0x44, 0x45};
 
+        //String authKey = RandomStringUtils.random(16, true, true);
         String authKey = "FQK5uuUZ7TZmOLM1";
 
             byte[] srcBytes = authKey.trim().getBytes();
