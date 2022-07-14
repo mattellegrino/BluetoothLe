@@ -3,6 +3,12 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/enric/StudioProjects/BluetoothLe/app/src/main/res/drawable-mdpi/ic_lock_black_24dp.xml" value="0.153" />
+        <entry key="..\:/Users/enric/StudioProjects/BluetoothLe/app/src/main/res/drawable-mdpi/ic_person.xml" value="0.153" />
+        <entry key="..\:/Users/enric/StudioProjects/BluetoothLe/app/src/main/res/drawable/btn_background.xml" value="0.1" />
+        <entry key="..\:/Users/enric/StudioProjects/BluetoothLe/app/src/main/res/layout/activity_firebase_ui.xml" value="0.1" />
+        <entry key="..\:/Users/enric/StudioProjects/BluetoothLe/app/src/main/res/layout/activity_login.xml" value="0.1" />
+        <entry key="..\:/Users/enric/StudioProjects/BluetoothLe/app/src/main/res/layout/styles.xml" value="0.1" />
         <entry key="app/src/main/res/drawable/btn_background.xml" value="0.222" />
         <entry key="app/src/main/res/layout/actionbar_indeterminate_progress.xml" value="0.1640625" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.22" />

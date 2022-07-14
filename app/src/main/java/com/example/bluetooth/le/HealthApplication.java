@@ -12,7 +12,10 @@ import java.util.Locale;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+
 public class HealthApplication extends Application {
+    private User user;
+
     /**
      * Main Application class that initializes and provides access to certain things like
      * logging and DB access.
@@ -85,4 +88,12 @@ public class HealthApplication extends Application {
     }
 
      */
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 }

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#30343F</color>
+    <color name="colorPrimaryDark">#1C2630</color>
+    <color name="colorAccent">#00BFA5</color>
+
+    <color name="textLight">#6A808B</color>
+    <color name="text">#272D2D</color>
+    <color name="textDark">#0F0A0A</color>
+
+    <color name="colorAppBar">#30343F</color>
+    <color name="textMenu">#58C3FF</color>
+    <color name="login">#7cd0ff</color>
+    <color name="appName">#8BC1D8</color>
+
+    <color name="layout">#FAFAFF</color>
+    <color name="layoutAccent">#E0F2F1</color>
+    <color name="layoutPrimary">#E1F5FE</color>
+
+    <color name="iconBackground">#2E9BF5</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="white_dark">#85A3B8</color>
+    <color name="yellow">#FFFF00</color>
+    <color name="AndroidRobot">#FFA4C639</color>
+
+</resources>
