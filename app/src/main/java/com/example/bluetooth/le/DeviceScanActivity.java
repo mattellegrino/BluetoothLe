@@ -66,8 +66,8 @@ public class DeviceScanActivity extends ListActivity {
         if (mBluetoothAdapter == null) {
             Toast.makeText(this, R.string.error_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
             finish();
-            return;
         }
+        requestBlePermissions(this,REQUEST_ENABLE_BT);
     }
 
     @Override
@@ -109,14 +109,16 @@ public class DeviceScanActivity extends ListActivity {
         if (!mBluetoothAdapter.isEnabled()) {
             if (!mBluetoothAdapter.isEnabled()) {
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-                    requestBlePermissions(this, REQUEST_ENABLE_BT);
-                    return;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+                {
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+                        requestBlePermissions(this, REQUEST_ENABLE_BT);
+                        return;
+                    }
                 }
                 startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             }
         }
-
         // Initializes list view adapter.
         mLeDeviceListAdapter = new LeDeviceListAdapter();
         setListAdapter(mLeDeviceListAdapter);
@@ -152,14 +154,17 @@ public class DeviceScanActivity extends ListActivity {
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
             if (mScanning) {
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                    requestBlePermissions(this, REQUEST_ENABLE_BT);
-                    return;
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                        requestBlePermissions(this, REQUEST_ENABLE_BT);
+                        return;
+                    }
                 }
                 mBluetoothAdapter.stopLeScan(mLeScanCallback);
                 mScanning = false;
             }
-            device.createBond();
+            //device.createBond();
             startActivity(intent);
             finish();
         }
@@ -179,9 +184,11 @@ public class DeviceScanActivity extends ListActivity {
                 @Override
                 public void run() {
                     mScanning = false;
-                    if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                        requestBlePermissions(getParent(),REQUEST_ENABLE_BT);
-                        return;
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                            requestBlePermissions(getParent(), REQUEST_ENABLE_BT);
+                            return;
+                        }
                     }
                     mBluetoothAdapter.stopLeScan(mLeScanCallback);
                     invalidateOptionsMenu();
@@ -189,9 +196,11 @@ public class DeviceScanActivity extends ListActivity {
             }, SCAN_PERIOD);
 
             mScanning = true;
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-                requestBlePermissions(this,REQUEST_ENABLE_BT);
-                return;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+                    requestBlePermissions(this, REQUEST_ENABLE_BT);
+                    return;
+                }
             }
             mBluetoothAdapter.startLeScan(mLeScanCallback);
         } else {
@@ -314,8 +323,10 @@ public class DeviceScanActivity extends ListActivity {
 
 
     private static final String[] BLE_PERMISSIONS = new String[]{
-            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.BLUETOOTH_CONNECT,
             Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
     };
 
     private static final String[] ANDROID_12_BLE_PERMISSIONS = new String[]{
