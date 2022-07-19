@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,24 +71,6 @@ public class HealthApplication extends Application {
         return app;
     }
 
-    /*
-    public void setupDatabase() {
-        DaoMaster.OpenHelper helper;
-        GBEnvironment env = GBEnvironment.env();
-        if (env.isTest()) {
-            helper = new DaoMaster.DevOpenHelper(this, null, null);
-        } else {
-            helper = new DBOpenHelper(this, DATABASE_NAME, null);
-        }
-        SQLiteDatabase db = helper.getWritableDatabase();
-        DaoMaster daoMaster = new DaoMaster(db);
-        if (lockHandler == null) {
-            lockHandler = new LockHandler();
-        }
-        lockHandler.init(daoMaster, helper);
-    }
-
-     */
 
     public User getUser() {
         return user;
@@ -95,5 +78,38 @@ public class HealthApplication extends Application {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+
+    public static HealthApplication getContext() {
+        return context;
+    }
+
+    public static SharedPreferences getSharedPrefs() {
+        return sharedPrefs;
+    }
+
+    public static HealthApplication getApp() {
+        return app;
+    }
+
+    public static Locale getLanguage() {
+        return language;
+    }
+
+    public static boolean isRunningLollipopOrLater() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+    }
+
+    public static boolean isRunningMarshmallowOrLater() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
+    }
+
+    public static boolean isRunningNougatOrLater() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
+    }
+
+    public static boolean isRunningOreoOrLater() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
     }
 }

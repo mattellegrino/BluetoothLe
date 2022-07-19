@@ -13,6 +13,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -151,8 +152,10 @@ public class DeviceScanActivity extends ListActivity {
         final Intent intent = new Intent(this, DeviceControlActivity.class);
         try
         {
-            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME, device.getName());
-            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+            HADevice haDevice = new HADevice(device.getName(),device.getAddress());
+            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,device.getName());
+            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,device.getAddress());
+            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE, haDevice);
             if (mScanning) {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
