@@ -5,25 +5,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Parcel;
 import android.os.Parcelable;
-
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 public class HADevice implements Parcelable {
     public static final String ACTION_DEVICE_CHANGED = "action.device_changed";
     public static final String EXTRA_DEVICE = "device";
-    private String DeviceName;
-    private String DeviceAddress;
-    private State DeviceState = State.NOT_CONNECTED;
+    private BluetoothDevice bluetoothDevice;
+    private String deviceName;
+    private String deviceAddress;
+    private State deviceState = State.NOT_CONNECTED;
 
-    public HADevice(String deviceName, String deviceAddress) {
-        DeviceName = deviceName;
-        DeviceAddress = deviceAddress;
+    public HADevice(String deviceName, String deviceAddress,BluetoothDevice device) {
+        this.deviceName = deviceName;
+        this.deviceAddress = deviceAddress;
+        this.bluetoothDevice = device;
     }
 
     protected HADevice(Parcel in) {
-        DeviceName = in.readString();
-        DeviceAddress = in.readString();
-        DeviceState = State.values()[in.readInt()];
+        deviceName = in.readString();
+        deviceAddress = in.readString();
+        deviceState = State.values()[in.readInt()];
     }
 
     public static final Creator<HADevice> CREATOR = new Creator<HADevice>() {
@@ -39,19 +40,19 @@ public class HADevice implements Parcelable {
     };
 
     public String getDeviceName() {
-        return DeviceName;
+        return deviceName;
     }
 
     public String getDeviceAddress() {
-        return DeviceAddress;
+        return deviceAddress;
     }
 
     public State getDeviceState() {
-        return DeviceState;
+        return deviceState;
     }
 
     public void setState(State newState) {
-        this.DeviceState = newState;
+        this.deviceState = newState;
     }
 
     public void sendDeviceUpdateIntent(Context context) {
@@ -67,9 +68,9 @@ public class HADevice implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeString(DeviceName);
-        parcel.writeString(DeviceAddress);
-        parcel.writeInt(DeviceState.ordinal());
+        parcel.writeString(deviceName);
+        parcel.writeString(deviceAddress);
+        parcel.writeInt(deviceState.ordinal());
     }
 
     public enum State {
@@ -91,18 +92,18 @@ public class HADevice implements Parcelable {
     }
 
     public boolean isConnected() {
-        return DeviceState.ordinal() >= State.CONNECTED.ordinal();
+        return deviceState.ordinal() >= State.CONNECTED.ordinal();
     }
     public boolean isInitializing() {
-        return DeviceState == State.INITIALIZING;
+        return deviceState == State.INITIALIZING;
     }
 
     public boolean isInitialized() {
-        return DeviceState.ordinal() >= State.INITIALIZED.ordinal();
+        return deviceState.ordinal() >= State.INITIALIZED.ordinal();
     }
 
     public boolean isConnecting() {
-        return DeviceState == State.CONNECTING;
+        return deviceState == State.CONNECTING;
     }
 
 }
