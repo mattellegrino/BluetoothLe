@@ -31,20 +31,32 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Binder;
+import android.os.Build;
+import android.os.Bundle;
 import android.os.IBinder;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.widget.Toast;
+
+import com.example.bluetooth.le.ble.BtLEQueue;
+import com.example.bluetooth.le.ble.SetDeviceStateAction;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -57,14 +69,22 @@ import javax.crypto.spec.SecretKeySpec;
  * Service for managing connection and data communication with a GATT server hosted on a
  * given Bluetooth LE device.
  */
-public class BluetoothLeService extends Service {
+public class BluetoothLeService extends Service implements GattCallback, GattServerCallback{
     private final static String TAG = BluetoothLeService.class.getSimpleName();
 
+    private BtLEQueue mQueue;
+    protected HADevice mDevice;
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothGattCharacteristic characteristicHRControlPoint;
     private String mBluetoothDeviceAddress;
     private BluetoothGatt mBluetoothGatt;
+    private HashMap<UUID, BluetoothGattCharacteristic> mAvailableCharacteristics = new HashMap<UUID, BluetoothGattCharacteristic>();
     private int mConnectionState = STATE_DISCONNECTED;
+    private boolean autoReconnect;
+    private boolean needsAuth;
+    byte authFlags;
+    byte cryptFlags;
 
     private static final int STATE_DISCONNECTED = 0;
     private static final int STATE_CONNECTING = 1;
@@ -119,42 +139,25 @@ public class BluetoothLeService extends Service {
             }
         }
 
+        @RequiresApi(api = Build.VERSION_CODES.N)
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
+            //Controllo se lo stato del device è inizializzato e inizializzo o meno a seconda dello stato
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
-
-                new Timer().schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        BluetoothGattCharacteristic authcharacteristic = mBluetoothGatt.getService(UUID.fromString("0000fee1-0000-1000-8000-00805f9b34fb")).getCharacteristic(UUID.fromString("00000009-0000-3512-2118-0009af100700"));
-                        System.out.println("Authentication");
-                        //activate notification
-                        boolean result = mBluetoothGatt.setCharacteristicNotification(authcharacteristic, true);
-                        if (result) {
-                            for (BluetoothGattDescriptor descriptor : authcharacteristic.getDescriptors()){
-                                if (descriptor.getUuid().equals(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))) {
-                                    Log.i("INFO", "Found NOTIFICATION BluetoothGattDescriptor: " + descriptor.getUuid().toString());
-                                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                                }
-                            }
-                        } else {
-                            Log.e("Autenthication","Unable to enable notification for " + authcharacteristic.getUuid());
-                        }
-
-                        byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
-
-
-                        //write characteristic
-
-                        //TODO: expectsResult should return false if PROPERTY_WRITE_NO_RESPONSE is true, but this leads to timing issues
-
-                        writeValue(mBluetoothGatt, authcharacteristic, sendKey);
-                        // here goes your code to delay
-                    }
-                }, 300L);
-
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                //Inserisco characteristics
+                gatt.getServices().forEach(s-> s.getCharacteristics().forEach(c->mAvailableCharacteristics.put(c.getUuid(),c)));
+                //Inizializzo il dispositivo
 
+                if(getDevice().getDeviceState().compareTo(HADevice.State.INITIALIZING)>=0) {
+                    Log.w("LeService","Services discovered, but device state is already" + getDevice().getDeviceState() + "for device" + getDevice().getDeviceName() + "so ignoring");
+                    return;
+                }
+                Log.w("LeService","Services discovered, but device state is already" + getDevice().getDeviceState() + "for device" + getDevice().getDeviceName() + "so ignoring");
+                System.out.println("Stato del device" + getDevice().getDeviceState());
+                initializeDevice2();
 
 
             } else {
@@ -162,6 +165,132 @@ public class BluetoothLeService extends Service {
             }
 
         }
+
+        public BtLEQueue getQueue() {
+            return mQueue;
+        }
+
+
+        public boolean connect() {
+            if (mQueue == null) {
+                mQueue = new BtLEQueue(getBluetoothAdapter(), getDevice(), this, this, getContext());
+                mQueue.setAutoReconnect(getAutoReconnect());
+            }
+            return mQueue.connect();
+        }
+
+        public Context getContext() {
+            return getApplicationContext();
+        }
+
+
+        public boolean getAutoReconnect() {
+            return true;
+        }
+
+        public void setAutoReconnect(boolean enable) {
+            if (mQueue != null) {
+                mQueue.setAutoReconnect(enable);
+            }
+        }
+
+        public HADevice getDevice() {
+            return mDevice;
+        }
+
+        public BluetoothAdapter getBluetoothAdapter() {
+            return mBluetoothAdapter;
+        }
+
+        public boolean useAutoConnect() {
+            return true;
+        }
+
+        public boolean connectFirstTime() {
+            needsAuth = true;
+            return connect();
+        }
+
+
+        public void initializeDevice2() {
+
+            enableNotifications(true);
+            if (needsAuth) {
+                getDevice().setState(HADevice.State.AUTHENTICATING);
+                // write key to device
+                byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, authFlags}, getSecretKey());
+                writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_AUTH), sendKey);
+            } else {
+
+                getDevice().setState(HADevice.State.AUTHENTICATING);
+                // get random auth number
+                writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_AUTH), requestAuthNumber());
+            }
+        }
+
+        public void enableNotifications(boolean enable) {
+            // Notify CHARACTERISTIC9 to receive random auth code
+            mBluetoothGatt.setCharacteristicNotification(getCharacteristic(HuamiService.UUID_CHARACTERISTIC_AUTH), enable);
+        }
+
+        private byte[] requestAuthNumber() {
+                return new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0};
+        }
+
+
+        public void initializeDevice() {
+            new Timer().schedule(new TimerTask() {
+                // Inizialize dispositivo
+                @Override
+                public void run() {
+                    BluetoothGattCharacteristic authcharacteristic = getCharacteristic(HuamiService.UUID_CHARACTERISTIC_AUTH);
+                    System.out.println("Authentication");
+                    //activate notification
+                    new Timer().schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            notifycharacteristic(authcharacteristic);
+                        }
+                    },500L);
+
+                    byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
+
+                    writeValue(mBluetoothGatt, authcharacteristic, sendKey);
+                    // here goes your code to delay
+                }
+            }, 500L);
+
+        }
+
+
+        public TransactionBuilder createTransactionBuilder(String taskName) {
+            return new TransactionBuilder(taskName);
+        }
+
+        public void notifycharacteristic(BluetoothGattCharacteristic characteristic) {
+            boolean result = mBluetoothGatt.setCharacteristicNotification(characteristic, true);
+            if (result) {
+                BluetoothGattDescriptor notifyDescriptor = characteristic.getDescriptor(UUID_DESCRIPTOR_GATT_CLIENT_CHARACTERISTIC_CONFIGURATION);
+                if (notifyDescriptor != null) {
+                    int properties = characteristic.getProperties();
+                    if ((properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                        Log.d("Notify","use NOTIFICATION");
+                        notifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        result = mBluetoothGatt.writeDescriptor(notifyDescriptor);
+                    } else if ((properties & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0) {
+                        Log.d(" Notify","use INDICATION");
+                        notifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                        result = mBluetoothGatt.writeDescriptor(notifyDescriptor);
+
+                    } else {
+
+                    }
+                }
+            } else {
+                Log.e("Autenthication","Unable to enable notification for " + characteristic.getUuid());
+            }
+        }
+
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt,
@@ -172,6 +301,7 @@ public class BluetoothLeService extends Service {
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
         }
+
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
@@ -201,21 +331,18 @@ public class BluetoothLeService extends Service {
 
                             //ransactionBuilder builder = createTransactionBuilder("Sending the encrypted random key to the device");
                             writeValue(mBluetoothGatt, characteristic, responseValue);
+
                             System.out.println("Autentic part 2");
 
-                            //huamiSupport.setCurrentTimeWithService(builder);
+                            setCurrentTimeWithService();
                             // huamiSupport.performImmediately(builder);
                         } else if (value[0] == HuamiService.AUTH_RESPONSE &&
                                 (value[1] & 0x0f) == HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER &&
                                 value[2] == HuamiService.AUTH_SUCCESS) {
-                            //TransactionBuilder builder = createTransactionBuilder("Authenticated, now initialize phase 2");
-                       /* builder.add(new SetDeviceStateAction(getDevice(), GBDevice.State.INITIALIZING, getContext()));
-                        huamiSupport.enableFurtherNotifications(builder, true);
-                        huamiSupport.requestDeviceInfo(builder);
-                        huamiSupport.phase2Initialize(builder);
-                        huamiSupport.phase3Initialize(builder);
-                        huamiSupport.setInitialized(builder);
-                        huamiSupport.performImmediately(builder);*/
+
+
+                            enableFurtherNotifications();
+                            phase3Initialize();
                             System.out.println("Autenticato");
                         }
                     } catch (Exception e) {
@@ -247,6 +374,103 @@ public class BluetoothLeService extends Service {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
+
+    public void setCurrentTimeWithService() {
+        GregorianCalendar now = BLETypeConversions.createCalendar();
+        byte[] bytes = getTimeBytes(now, TimeUnit.SECONDS);
+        writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_CURRENT_TIME), bytes);
+    }
+    public byte[] getTimeBytes(Calendar calendar, TimeUnit precision) {
+        byte[] bytes;
+        if (precision == TimeUnit.MINUTES) {
+            bytes = BLETypeConversions.shortCalendarToRawBytes(calendar);
+        } else if (precision == TimeUnit.SECONDS) {
+            bytes = BLETypeConversions.calendarToRawBytes(calendar);
+        } else {
+            throw new IllegalArgumentException("Unsupported precision, only MINUTES and SECONDS are supported till now");
+        }
+        byte[] tail = new byte[] { 0, BLETypeConversions.mapTimeZone(calendar, BLETypeConversions.TZ_FLAG_INCLUDE_DST_IN_TZ) };
+        // 0 = adjust reason bitflags? or DST offset?? , timezone
+//        byte[] tail = new byte[] { 0x2 }; // reason
+        byte[] all = BLETypeConversions.join(bytes, tail);
+        return all;
+    }
+
+
+
+    public void phase3Initialize() {
+        Log.i("BluetoothLeService","phase3Initialize...");
+        setDateDisplay();
+        setTimeFormat();
+        setDistanceUnit();
+        //setUserInfo(builder);
+        //setWearLocation(builder);
+       // setFitnessGoal(builder);
+       // setDisplayItems(builder);
+       // setDoNotDisturb(builder);
+        setRotateWristToSwitchInfo();
+       // setActivateDisplayOnLiftWrist(builder);
+        //setDisplayCaller(builder);
+        //setGoalNotification(builder);
+       // setInactivityWarnings(builder);
+        setHeartrateSleepSupport();
+        //setDisconnectNotification(builder);
+        //setExposeHRThridParty(builder);
+        setHeartrateMeasurementInterval(5); //5 numero di minuti
+        //sendReminders(builder);
+       // requestAlarms(builder);
+    }
+
+    private void setDateDisplay() {
+        Log.d("BluetoothLeService","Setting DateDisplay..");
+        writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.DATEFORMAT_TIME);
+    }
+
+    private void setTimeFormat() {
+        writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.DATEFORMAT_TIME_24_HOURS);
+    }
+
+    private void setDistanceUnit() {
+        writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.COMMAND_DISTANCE_UNIT_METRIC);
+    }
+
+    private void setRotateWristToSwitchInfo() {
+        writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.COMMAND_ENABLE_ROTATE_WRIST_TO_SWITCH_INFO);
+    }
+
+    private void setHeartrateSleepSupport() {
+        characteristicHRControlPoint = getCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT);
+        if (characteristicHRControlPoint != null) {
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, true);
+
+
+                Log.i("BluetoothLeService","Enabling heartrate sleep support...");
+                writeValue(mBluetoothGatt,characteristicHRControlPoint, HuamiService.COMMAND_ENABLE_HR_SLEEP_MEASUREMENT);
+
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, false); // TODO: this should actually be in some kind of finally-block in the queue. It should also be sent asynchronously after the notifications have completely arrived and processed.
+        }
+    }
+
+    private void setHeartrateMeasurementInterval(int minutes) {
+        if (characteristicHRControlPoint != null) {
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, true);
+            Log.i("BluetoothLeService","Setting heart rate measurement interval to " + minutes + " minutes");
+            writeValue(mBluetoothGatt,characteristicHRControlPoint, new byte[]{HuamiService.COMMAND_SET_PERIODIC_HR_MEASUREMENT_INTERVAL, (byte) minutes});
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, false);  // TODO: this should actually be in some kind of finally-block in the queue. It should also be sent asynchronously after the notifications have completely arrived and processed.
+        }
+
+    }
+    public void enableFurtherNotifications() {
+        mBluetoothGatt.setCharacteristicNotification(getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION), true);
+        mBluetoothGatt.setCharacteristicNotification(getCharacteristic(HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO), true);
+        mBluetoothGatt.setCharacteristicNotification(getCharacteristic(HuamiService.UUID_CHARACTERISTIC_DEVICEEVENT), true);
+    }
+
+    public BluetoothGattCharacteristic getCharacteristic(UUID uuid) {
+        if(mAvailableCharacteristics.containsKey(uuid))
+            return mAvailableCharacteristics.get(uuid);
+        return null;
+    }
 
     public static byte[] hexStringToByteArray(String s) {
         int len = s.length();
@@ -335,6 +559,76 @@ public class BluetoothLeService extends Service {
         sendBroadcast(intent);
     }
 
+    @Override
+    public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
+
+    }
+
+    @Override
+    public void onServicesDiscovered(BluetoothGatt gatt) {
+
+    }
+
+    @Override
+    public boolean onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        return false;
+    }
+
+    @Override
+    public boolean onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
+        return false;
+    }
+
+    @Override
+    public boolean onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+        return false;
+    }
+
+    @Override
+    public boolean onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        return false;
+    }
+
+    @Override
+    public boolean onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
+        return false;
+    }
+
+    @Override
+    public void onReadRemoteRssi(BluetoothGatt gatt, int rssi, int status) {
+
+    }
+
+    @Override
+    public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+
+    }
+
+    @Override
+    public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
+
+    }
+
+    @Override
+    public boolean onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset, BluetoothGattCharacteristic characteristic) {
+        return false;
+    }
+
+    @Override
+    public boolean onCharacteristicWriteRequest(BluetoothDevice device, int requestId, BluetoothGattCharacteristic characteristic, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
+        return false;
+    }
+
+    @Override
+    public boolean onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset, BluetoothGattDescriptor descriptor) {
+        return false;
+    }
+
+    @Override
+    public boolean onDescriptorWriteRequest(BluetoothDevice device, int requestId, BluetoothGattDescriptor descriptor, boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
+        return false;
+    }
+
     public class LocalBinder extends Binder {
         BluetoothLeService getService() {
             return BluetoothLeService.this;
@@ -362,6 +656,9 @@ public class BluetoothLeService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+
+        mDevice = intent.getParcelableExtra("HADevice");
+        System.out.println("INDIRIZZO MAC" + mDevice.getDeviceAddress() + " " + "NOME DEVICE" + mDevice.getDeviceName());
         return mBinder;
     }
 

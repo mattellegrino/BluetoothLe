@@ -29,8 +29,10 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Parcelable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -64,7 +66,6 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //getActionBar().setTitle(R.string.title_devices);
         mHandler = new Handler();
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
@@ -167,7 +168,9 @@ public class DeviceScanActivity extends ListActivity {
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
             mScanning = false;
         }
-        device.createBond();
+        HADevice mydevice = new HADevice(device.getName(),device.getAddress());
+        //device.createBond();
+        intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,mydevice);
         startActivity(intent);
         finish();
     }
@@ -207,6 +210,8 @@ public class DeviceScanActivity extends ListActivity {
         }
 
         public boolean addDevice(BluetoothDevice device) {
+            HADevice newdevice = new HADevice(device.getName(),device.getAddress());
+            //db
             String deviceName = device.getName();
             if(!mLeDevices.contains(device)) {
                 if(deviceName != null && deviceName.length() > 0 && deviceName.equals("Mi Band 3")) {
