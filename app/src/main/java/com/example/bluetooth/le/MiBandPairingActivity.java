@@ -33,7 +33,7 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     private void startPairing() {
         isPairing = true;
-        Bonding.tryBondThenComplete(this, HAdevice,getContext());
+        Bonding.tryBondThenComplete(this, HAdevice);
 
     }
 
