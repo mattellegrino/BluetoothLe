@@ -169,8 +169,9 @@ public class DeviceControlActivity extends Activity {
         setContentView(R.layout.gatt_services_characteristics);
 
         final Intent intent = getIntent();
-        mDeviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
-        mDeviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
+        HADevice haDevice = intent.getParcelableExtra("HADevice");
+        mDeviceName = haDevice.getDeviceName();
+        mDeviceAddress = haDevice.getDeviceAddress();
 
         // Sets up UI references.
         ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
