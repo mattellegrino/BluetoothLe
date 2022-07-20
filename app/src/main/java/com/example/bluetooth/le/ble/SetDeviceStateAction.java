@@ -19,7 +19,7 @@ package com.example.bluetooth.le.ble;
 
 import android.bluetooth.BluetoothGatt;
 import android.content.Context;
-import android.support.annotation.NonNull;
+import androidx.annotation.NonNull;
 import com.example.bluetooth.le.HADevice;
 
 public class SetDeviceStateAction extends PlainAction {

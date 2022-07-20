@@ -16,6 +16,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 public class MiBandPairingActivity  extends AppCompatActivity implements BondingInterface{
 
     private final BroadcastReceiver bondingReceiver = Bonding.getBondingReceiver(this);
+    private final BroadcastReceiver pairingReceiver = Bonding.getPairingReceiver(this);
     public static final String EXTRAS_DEVICE = "Device_Info";
     private TextView message;
     private HADevice HAdevice;
@@ -33,7 +34,7 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     private void startPairing() {
         isPairing = true;
-        Bonding.tryBondThenComplete(this, HAdevice,getContext());
+        Bonding.tryBondThenComplete(this, HAdevice);
 
     }
 
@@ -49,12 +50,13 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     @Override
     public void unregisterBroadcastReceivers() {
-
+        unregisterReceiver(pairingReceiver);
+        unregisterReceiver(bondingReceiver);
     }
 
     @Override
     public void registerBroadcastReceivers() {
-        //LocalBroadcastManager.getInstance(this).registerReceiver(pairingReceiver, new IntentFilter(GBDevice.ACTION_DEVICE_CHANGED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(pairingReceiver, new IntentFilter(HADevice.ACTION_DEVICE_CHANGED));
         registerReceiver(bondingReceiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
     }
 

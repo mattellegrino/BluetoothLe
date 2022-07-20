@@ -23,6 +23,26 @@ public class Bonding {
     private static final long DELAY_AFTER_BONDING = 1000; // 1s
 
 
+    public static BroadcastReceiver getPairingReceiver(final BondingInterface activity) {
+        return new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (HADevice.ACTION_DEVICE_CHANGED.equals(intent.getAction())) {
+                    HADevice device = intent.getParcelableExtra(HADevice.EXTRA_DEVICE);
+                    Log.d("Bonding","Pairing receiver: device changed: " + device);
+                    if (activity.getCurrentTarget().getBluetoothDevice().getAddress().equals(device.getDeviceAddress())) {
+                        if (device.isInitialized()) {
+                            Log.i("Bonding","Device is initialized, finish things up");
+                            activity.onBondingComplete(true);
+                        } else if (device.isConnecting() || device.isInitializing()) {
+                            Log.i("Bonding","Still connecting/initializing device...");
+                        }
+                    }
+                }
+            }
+        };
+    }
+
     public static BroadcastReceiver getBondingReceiver(final BondingInterface bondingInterface) {
         return new BroadcastReceiver() {
             @Override
@@ -107,6 +127,7 @@ public class Bonding {
                 //GBApplication.deviceService().disconnect();
                 //GBDevice device = DeviceHelper.getInstance().toSupportedDevice(candidate);
                 Intent intent = new Intent(HealthApplication.getContext(),DeviceControlActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.putExtra("HADevice",HADevice);
                 intent.putExtra(DeviceControlActivity.EXTRA_CONNECT_FIRST_TIME,true);
                 startDeviceControlActivity(intent);

@@ -20,9 +20,11 @@ package com.example.bluetooth.le;
 
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.os.Build;
-import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
+
 import com.example.bluetooth.le.ble.BtLEAction;
 import com.example.bluetooth.le.ble.BtLEQueue;
 import com.example.bluetooth.le.ble.NotifyAction;
