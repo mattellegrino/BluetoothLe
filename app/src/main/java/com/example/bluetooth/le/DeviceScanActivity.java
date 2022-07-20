@@ -7,12 +7,17 @@ import android.app.ListActivity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.ParcelUuid;
+import android.os.Parcelable;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,6 +31,8 @@ import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Activity for scanning and displaying available Bluetooth LE devices.
@@ -35,6 +42,10 @@ public class DeviceScanActivity extends ListActivity {
     private BluetoothAdapter mBluetoothAdapter;
     private boolean mScanning;
     private boolean isPairing;
+    private Scanning isScanning = Scanning.SCANNING_OFF;
+    private boolean isScanning() {
+        return isScanning != Scanning.SCANNING_OFF;
+    }
     private Handler mHandler;
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
@@ -67,6 +78,49 @@ public class DeviceScanActivity extends ListActivity {
             finish();
         }
         requestBlePermissions(this,REQUEST_ENABLE_BT);
+        registerBroadcastReceivers();
+
+    }
+
+    private final BroadcastReceiver bluetoothReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (Objects.requireNonNull(intent.getAction())) {
+
+                case BluetoothDevice.ACTION_BOND_STATE_CHANGED: {
+                    Log.d("DeviceScanActivity","ACTION_BOND_STATE_CHANGED");
+                    HADevice device = intent.getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
+                    if (device != null) {
+                        int bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE);
+                        Log.d("DeviceScanActivity",String.format(Locale.ENGLISH, "Bond state: %d", bondState));
+
+                        if (bondState == BluetoothDevice.BOND_BONDED) {
+                            Bonding.handleDeviceBonded((BondingInterface) context, device);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    };
+
+    private enum Scanning {
+        /**
+         * Regular Bluetooth scan
+         */
+        SCANNING_BT,
+        /**
+         * Regular Bluetooth scan but when ends, start BLE scan
+         */
+        SCANNING_BT_NEXT_BLE,
+        /**
+         * Regular BLE scan
+         */
+        SCANNING_BLE,
+        /**
+         * Scanning has ended or hasn't been started
+         */
+        SCANNING_OFF
     }
 
     @Override
@@ -102,6 +156,7 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        registerBroadcastReceivers();
 
         // Ensures Bluetooth is enabled on the device.  If Bluetooth is not currently enabled,
         // fire an intent to display a dialog asking the user to grant permission to enable it.
@@ -137,10 +192,23 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     protected void onPause() {
         super.onPause();
+        unregisterBroadcastReceivers();
         scanLeDevice(false);
         if(mLeDeviceListAdapter!=null)
         mLeDeviceListAdapter.clear();
     }
+    @Override
+    protected void onDestroy() {
+        unregisterBroadcastReceivers();
+        super.onDestroy();
+    }
+
+    @Override
+    protected void onStop() {
+        unregisterBroadcastReceivers();
+        super.onStop();
+    }
+
 
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
@@ -154,7 +222,7 @@ public class DeviceScanActivity extends ListActivity {
             HADevice haDevice = new HADevice(device.getName(),device.getAddress(),device);
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,device.getName());
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,device.getAddress());
-            intentPairing.putExtra(MiBandPairingActivity.EXTRAS_DEVICE, haDevice);
+            intentPairing.putExtra(DeviceControlActivity.EXTRAS_DEVICE, haDevice);
             if (mScanning) {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -215,6 +283,19 @@ public class DeviceScanActivity extends ListActivity {
             mBluetoothAdapter.stopLeScan(mLeScanCallback);
         }
         invalidateOptionsMenu();
+    }
+
+
+    public void registerBroadcastReceivers() {
+        IntentFilter bluetoothIntents = new IntentFilter();
+        bluetoothIntents.addAction(BluetoothDevice.ACTION_FOUND);
+        bluetoothIntents.addAction(BluetoothDevice.ACTION_UUID);
+        bluetoothIntents.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+        bluetoothIntents.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+        bluetoothIntents.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+        bluetoothIntents.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+
+        registerReceiver(bluetoothReceiver, bluetoothIntents);
     }
 
 
@@ -348,5 +429,18 @@ public class DeviceScanActivity extends ListActivity {
             ActivityCompat.requestPermissions(activity, ANDROID_12_BLE_PERMISSIONS, requestCode);
         else
             ActivityCompat.requestPermissions(activity, BLE_PERMISSIONS, requestCode);
+    }
+
+    public void unregisterBroadcastReceivers() {
+        safeUnregisterBroadcastReceiver(this,bluetoothReceiver);
+    }
+
+    public static boolean safeUnregisterBroadcastReceiver(Context context, BroadcastReceiver receiver) {
+        try {
+            context.unregisterReceiver(receiver);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 }

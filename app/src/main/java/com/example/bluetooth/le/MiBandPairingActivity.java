@@ -1,11 +1,14 @@
 package com.example.bluetooth.le;
 
+import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -26,7 +29,7 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mi_band_pairing);
         message = findViewById(R.id.miband_pair_message);
-        HAdevice = getIntent().getParcelableExtra(MiBandPairingActivity.EXTRAS_DEVICE);
+        HAdevice = getIntent().getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
         System.out.println(HAdevice.getDeviceAddress());
         startPairing();
     }
@@ -40,7 +43,29 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     @Override
     public void onBondingComplete(boolean success) {
+        Log.d("MiBandPairingActivity","pairingFinished: " + success);
+        if (!isPairing) {
+            // already gone?
+            return;
+        } else {
+            isPairing = false;
+        }
 
+        if (success) {
+            // remember the device since we do not necessarily pair... temporary -- we probably need
+            // to query the db for available devices in ControlCenter. But only remember un-bonded
+            // devices, as bonded devices are displayed anyway.
+            String macAddress = HAdevice.getDeviceAddress();
+            BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(macAddress);
+            if (device != null && HAdevice.getBluetoothDevice().getBondState() == BluetoothDevice.BOND_NONE) {
+                SharedPreferences prefs = HealthApplication.getSharedPrefs();
+                prefs.edit().putString("MacAddress-MIBAND3", macAddress).apply();
+                Log.d("MiBandPairingActivity","SharedPrefs" + prefs.getString("MacAddress-MIBAND3","-1"));
+            }
+            Intent intent = new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            startActivity(intent);
+        }
+        finish();
     }
 
     @Override
@@ -56,7 +81,7 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     @Override
     public void registerBroadcastReceivers() {
-        LocalBroadcastManager.getInstance(this).registerReceiver(pairingReceiver, new IntentFilter(HADevice.ACTION_DEVICE_CHANGED));
+        //LocalBroadcastManager.getInstance(this).registerReceiver(pairingReceiver, new IntentFilter(HADevice.ACTION_DEVICE_CHANGED));
         registerReceiver(bondingReceiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
     }
 

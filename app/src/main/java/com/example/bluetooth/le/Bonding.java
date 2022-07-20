@@ -86,6 +86,25 @@ public class Bonding {
         };
     }
 
+
+    public static void handleDeviceBonded(BondingInterface bondingInterface, HADevice HAdevice) {
+        if (HAdevice == null) {
+            Log.e("Bonding","deviceCandidate was null! Can't handle bonded device!");
+            return;
+        }
+
+        //toast(bondingInterface.getContext(), bondingInterface.getContext().getString(R.string.discovery_successfully_bonded, deviceCandidate.getName()), Toast.LENGTH_SHORT, GB.INFO);
+        connectThenComplete(bondingInterface, HAdevice);
+    }
+    public static void connectThenComplete(BondingInterface bondingInterface, HADevice HAdevice) {
+        //toast(bondingInterface.getContext(), bondingInterface.getContext().getString(R.string.discovery_trying_to_connect_to, device.getName()), Toast.LENGTH_SHORT, GB.INFO);
+        // Disconnect when LE Pebble so that the user can manually initiate a connection
+        //GBApplication.deviceService().disconnect();
+        //GBApplication.deviceService().connect(device, true);
+        bondingInterface.onBondingComplete(true);
+    }
+
+
     public static void tryBondThenComplete(BondingInterface bondingInterface, HADevice HAdevice) {
         bondingInterface.registerBroadcastReceivers();
         BluetoothDevice device = HAdevice.getBluetoothDevice();
@@ -128,7 +147,7 @@ public class Bonding {
                 //GBDevice device = DeviceHelper.getInstance().toSupportedDevice(candidate);
                 Intent intent = new Intent(HealthApplication.getContext(),DeviceControlActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                intent.putExtra("HADevice",HADevice);
+                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,HADevice);
                 intent.putExtra(DeviceControlActivity.EXTRA_CONNECT_FIRST_TIME,true);
                 startDeviceControlActivity(intent);
             }

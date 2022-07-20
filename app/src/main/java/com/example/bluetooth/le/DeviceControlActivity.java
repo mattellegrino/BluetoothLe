@@ -169,7 +169,7 @@ public class DeviceControlActivity extends Activity {
         setContentView(R.layout.gatt_services_characteristics);
 
         final Intent intent = getIntent();
-        HADevice haDevice = intent.getParcelableExtra("HADevice");
+        HADevice haDevice = intent.getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
         mDeviceName = haDevice.getDeviceName();
         mDeviceAddress = haDevice.getDeviceAddress();
 
@@ -185,7 +185,9 @@ public class DeviceControlActivity extends Activity {
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
         firstTime = (boolean) intent.getExtras().get(EXTRA_CONNECT_FIRST_TIME);
         gattServiceIntent.putExtra("firstTime",firstTime);
+        gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,haDevice);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
+        finish();
     }
 
     @Override

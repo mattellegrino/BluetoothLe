@@ -19,6 +19,7 @@ package com.example.bluetooth.le;
 import android.annotation.SuppressLint;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCallback;
@@ -436,7 +437,7 @@ public class BluetoothLeService extends Service {
     public IBinder onBind(Intent intent) {
 
         needsAuth = (boolean) intent.getExtras().get("firstTime");
-
+        this.mDevice = intent.getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
         return mBinder;
     }
 
