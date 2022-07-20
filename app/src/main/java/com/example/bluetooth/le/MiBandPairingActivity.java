@@ -50,7 +50,7 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     @Override
     public void unregisterBroadcastReceivers() {
-        unregisterReceiver(pairingReceiver);
+        //unregisterReceiver(pairingReceiver);
         unregisterReceiver(bondingReceiver);
     }
 
