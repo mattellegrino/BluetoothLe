@@ -27,6 +27,8 @@ public class HuamiService {
 
     public static final UUID UUID_SERVICE_MIBAND_SERVICE = UUID.fromString(String.format(BASE_UUID, "FEE0"));
     public static final UUID UUID_SERVICE_MIBAND2_SERVICE = UUID.fromString(String.format(BASE_UUID, "FEE1"));
+    public static final UUID UUID_CHARACTERISTIC_NOTIFICATION = UUID.fromString(String.format(BASE_UUID, "FF03"));
+    public static final UUID UUID_SERVICE_CURRENT_TIME = UUID.fromString((String.format(BASE_UUID, "1805")));
     public static final UUID UUID_SERVICE_HEART_RATE = UUID.fromString(String.format(BASE_UUID, "180D"));
     public static final UUID UUID_SERVICE_FIRMWARE_SERVICE = UUID.fromString("00001530-0000-3512-2118-0009af100700");
 
@@ -39,6 +41,7 @@ public class HuamiService {
     /**
      * Alarms, Display and other configuration.
      */
+    public static final UUID UUID_DESCRIPTOR_GATT_CLIENT_CHARACTERISTIC_CONFIGURATION = UUID.fromString((String.format(BASE_UUID, "2902")));
     public static final UUID UUID_CHARACTERISTIC_3_CONFIGURATION = UUID.fromString("00000003-0000-3512-2118-0009af100700");
     public static final UUID UUID_UNKNOWN_CHARACTERISTIC4 = UUID.fromString("00000004-0000-3512-2118-0009af100700");
     public static final UUID UUID_CHARACTERISTIC_5_ACTIVITY_DATA = UUID.fromString("00000005-0000-3512-2118-0009af100700");
@@ -47,10 +50,11 @@ public class HuamiService {
     public static final UUID UUID_CHARACTERISTIC_8_USER_SETTINGS = UUID.fromString("00000008-0000-3512-2118-0009af100700");
     // service uuid fee1
     public static final UUID UUID_CHARACTERISTIC_AUTH = UUID.fromString("00000009-0000-3512-2118-0009af100700");
+    public static final UUID UUID_CHARACTERISTIC_CURRENT_TIME = UUID.fromString((String.format(BASE_UUID, "2A2B")));
     public static final UUID UUID_CHARACTERISTIC_DEVICEEVENT = UUID.fromString("00000010-0000-3512-2118-0009af100700");
     public static final UUID UUID_CHARACTERISTIC_AUDIO = UUID.fromString("00000012-0000-3512-2118-0009af100700");
     public static final UUID UUID_CHARACTERISTIC_AUDIODATA = UUID.fromString("00000013-0000-3512-2118-0009af100700");
-
+    public static final UUID UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT = UUID.fromString("00002a39-0000-1000-8000-00805f9b34fb");
     public static final UUID UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_WRITE = UUID.fromString("00000016-0000-3512-2118-0009af100700");
     public static final UUID UUID_CHARACTERISTIC_CHUNKEDTRANSFER_2021_READ = UUID.fromString("00000017-0000-3512-2118-0009af100700");
     public static final UUID UUID_CHARACTERISTIC_CHUNKEDTRANSFER = UUID.fromString("00000020-0000-3512-2118-0009af100700");

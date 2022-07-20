@@ -25,6 +25,7 @@ public class SampleGattAttributes {
     public static final String BASE_UUID = "0000%s-0000-1000-8000-00805f9b34fb";
     private static HashMap<String, String> attributes = new HashMap();
     public static String HEART_RATE_MEASUREMENT = "00002a37-0000-1000-8000-00805f9b34fb";
+    public static String HEART_RATE_CONTROL_POINT = "00002a39-0000-1000-8000-00805f9b34fb";
     public static String UUID_CHARACTERISTIC_DEVICE_NAME = "00002a00-0000-1000-8000-00805f9b34fb";
     public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
     public static String STEPS = "00000007-0000-3512-2118-0009af100700";
@@ -41,6 +42,7 @@ public class SampleGattAttributes {
         attributes.put("0000fee0-0000-1000-8000-00805f9b34fb","Device General Features");
         // Sample Characteristics.
         attributes.put(HEART_RATE_MEASUREMENT, "Heart Rate Measurement");
+        attributes.put(HEART_RATE_CONTROL_POINT,"Heart Rate Control Point");
         attributes.put(UUID_CHARACTERISTIC_AUTH, "Authentication");
         attributes.put(UUID_CHARACTERISTIC_DEVICE_NAME,"Device Name");
         attributes.put(STEPS, "Realtime Steps");
