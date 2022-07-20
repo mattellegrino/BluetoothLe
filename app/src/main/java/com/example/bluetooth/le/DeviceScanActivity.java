@@ -36,7 +36,6 @@ public class DeviceScanActivity extends ListActivity {
     private boolean mScanning;
     private boolean isPairing;
     private Handler mHandler;
-    private BluetoothDevice device;
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
 
     private static final int REQUEST_ENABLE_BT = 1;
@@ -146,15 +145,16 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     protected void onListItemClick(ListView l, View v, int position, long id) {
         final BluetoothDevice device = mLeDeviceListAdapter.getDevice(position);
-        this.device = device;
         if (device == null) return;
         final Intent intent = new Intent(this, DeviceControlActivity.class);
+        final Intent intentPairing = new Intent(this, MiBandPairingActivity.class);
+
         try
         {
             HADevice haDevice = new HADevice(device.getName(),device.getAddress(),device);
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,device.getName());
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,device.getAddress());
-            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE, haDevice);
+            intentPairing.putExtra(MiBandPairingActivity.EXTRAS_DEVICE, haDevice);
             if (mScanning) {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -166,8 +166,10 @@ public class DeviceScanActivity extends ListActivity {
                 mBluetoothAdapter.stopLeScan(mLeScanCallback);
                 mScanning = false;
             }
+
+            startActivity(intentPairing);
             //device.createBond();
-            startActivity(intent);
+            //startActivity(intent);
             finish();
         }
         catch( SecurityException se)
@@ -177,6 +179,9 @@ public class DeviceScanActivity extends ListActivity {
         }
 
     }
+
+
+
 
 
     private void scanLeDevice(final boolean enable) {

@@ -57,6 +57,7 @@ public class DeviceControlActivity extends Activity {
     public static final String EXTRAS_DEVICE = "DEVICE_INFO";
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+    public static final String EXTRA_CONNECT_FIRST_TIME = "connect_first_time";
 
     private TextView mConnectionState;
     private TextView mDataField;
@@ -71,6 +72,7 @@ public class DeviceControlActivity extends Activity {
 
     private final String LIST_NAME = "NAME";
     private final String LIST_UUID = "UUID";
+    private boolean firstTime;
 
     // Code to manage Service lifecycle.
     private final ServiceConnection mServiceConnection = new ServiceConnection() {
@@ -180,9 +182,9 @@ public class DeviceControlActivity extends Activity {
         //getActionBar().setTitle(mDeviceName);
         //getActionBar().setDisplayHomeAsUpEnabled(true);
         Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        firstTime = (boolean) intent.getExtras().get(EXTRA_CONNECT_FIRST_TIME);
+        gattServiceIntent.putExtra("firstTime",firstTime);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-
-
     }
 
     @Override

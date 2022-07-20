@@ -31,9 +31,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
+
+import androidx.annotation.RequiresApi;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -41,6 +44,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -63,9 +67,11 @@ public class BluetoothLeService extends Service {
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
     private String mBluetoothDeviceAddress;
+    protected HADevice mDevice;
     private BluetoothGatt mBluetoothGatt;
+    private boolean needsAuth;
     private int mConnectionState = STATE_DISCONNECTED;
-
+    private HashMap<UUID, BluetoothGattCharacteristic> mAvailableCharacteristics = new HashMap<UUID, BluetoothGattCharacteristic>();
     private static final int STATE_DISCONNECTED = 0;
     private static final int STATE_CONNECTING = 1;
     private static final int STATE_CONNECTED = 2;
@@ -99,6 +105,7 @@ public class BluetoothLeService extends Service {
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
             String intentAction;
+            try{
             if (newState == BluetoothProfile.STATE_CONNECTED) {
 
                 intentAction = ACTION_GATT_CONNECTED;
@@ -106,7 +113,6 @@ public class BluetoothLeService extends Service {
                 broadcastUpdate(intentAction);
                 Log.i(TAG, "Connected to GATT server.");
                 //make auth
-
                 // Attempts to discover services after successful connection.
                 Log.i(TAG, "Attempting to start service discovery:" +
                         mBluetoothGatt.discoverServices());
@@ -117,50 +123,115 @@ public class BluetoothLeService extends Service {
                 Log.i(TAG, "Disconnected from GATT server.");
                 broadcastUpdate(intentAction);
             }
-        }
+        }catch (SecurityException se)
+            {
+                se.printStackTrace();
+                throw se;
+            }
+    }
 
+        @RequiresApi(api = Build.VERSION_CODES.N)
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
+
+            //Controllo se lo stato del device è inizializzato e inizializzo o meno a seconda dello stato
+
             if (status == BluetoothGatt.GATT_SUCCESS) {
-
-                new Timer().schedule(new TimerTask() {
-                    @Override
-                    public void run() {
-                        BluetoothGattCharacteristic authcharacteristic = mBluetoothGatt.getService(UUID.fromString("0000fee1-0000-1000-8000-00805f9b34fb")).getCharacteristic(UUID.fromString("00000009-0000-3512-2118-0009af100700"));
-                        System.out.println("Authentication");
-                        //activate notification
-                        boolean result = mBluetoothGatt.setCharacteristicNotification(authcharacteristic, true);
-                        if (result) {
-                            for (BluetoothGattDescriptor descriptor : authcharacteristic.getDescriptors()){
-                                if (descriptor.getUuid().equals(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))) {
-                                    Log.i("INFO", "Found NOTIFICATION BluetoothGattDescriptor: " + descriptor.getUuid().toString());
-                                    descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
-                                }
-                            }
-                        } else {
-                            Log.e("Autenthication","Unable to enable notification for " + authcharacteristic.getUuid());
-                        }
-
-                        byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
-
-
-                        //write characteristic
-
-                        //TODO: expectsResult should return false if PROPERTY_WRITE_NO_RESPONSE is true, but this leads to timing issues
-
-                        writeValue(mBluetoothGatt, authcharacteristic, sendKey);
-                        // here goes your code to delay
-                    }
-                }, 300L);
-
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
+                //Inserisco characteristics
+                gatt.getServices().forEach(s-> s.getCharacteristics().forEach(c->mAvailableCharacteristics.put(c.getUuid(),c)));
+                //Inizializzo il dispositivo
 
+                if(getDevice().getDeviceState().compareTo(HADevice.State.INITIALIZING)>=0) {
+                    Log.w("LeService","Services discovered, but device state is already" + getDevice().getDeviceState() + "for device" + getDevice().getDeviceName() + "so ignoring");
+                    return;
+                }
+                Log.w("LeService","Services discovered, but device state is already" + getDevice().getDeviceState() + "for device" + getDevice().getDeviceName() + "so ignoring");
+                System.out.println("Stato del device" + getDevice().getDeviceState());
+
+                if(needsAuth)
+                {
+
+                }
+                initializeDevice();
 
 
             } else {
                 Log.w(TAG, "onServicesDiscovered received: " + status);
             }
 
+        }
+        public HADevice getDevice() {
+            return mDevice;
+        }
+
+
+        public void initializeDevice() {
+            new Timer().schedule(new TimerTask() {
+                // Inizialize dispositivo
+                @Override
+                public void run() {
+                    BluetoothGattCharacteristic authcharacteristic = getCharacteristic(HuamiService.UUID_CHARACTERISTIC_AUTH);
+                    System.out.println("Authentication");
+                    //activate notification
+                    new Timer().schedule(new TimerTask() {
+                        @Override
+                        public void run() {
+                            notifycharacteristic(authcharacteristic);
+                        }
+                    },500L);
+
+                    if(needsAuth)
+                    {
+                    getDevice().setDeviceState(HADevice.State.AUTHENTICATING);
+                    byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
+                    writeValue(mBluetoothGatt, authcharacteristic, sendKey);}
+                    else {
+                        getDevice().setDeviceState(HADevice.State.INITIALIZING);
+                        assert authcharacteristic != null;
+                        writeValue(mBluetoothGatt,authcharacteristic,requestAuthNumber());
+                    }
+                    // here goes your code to delay
+                }
+            }, 500L);
+
+        }
+
+
+        private byte[] requestAuthNumber() {
+
+                return new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0};
+
+        }
+
+        public BluetoothGattCharacteristic getCharacteristic(UUID uuid) {
+            if(mAvailableCharacteristics.containsKey(uuid))
+                return mAvailableCharacteristics.get(uuid);
+            return null;
+        }
+
+        public void notifycharacteristic(BluetoothGattCharacteristic characteristic) {
+            boolean result = mBluetoothGatt.setCharacteristicNotification(characteristic, true);
+            if (result) {
+                BluetoothGattDescriptor notifyDescriptor = characteristic.getDescriptor(UUID_DESCRIPTOR_GATT_CLIENT_CHARACTERISTIC_CONFIGURATION);
+                if (notifyDescriptor != null) {
+                    int properties = characteristic.getProperties();
+                    if ((properties & BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                        Log.d("Notify","use NOTIFICATION");
+                        notifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+                        result = mBluetoothGatt.writeDescriptor(notifyDescriptor);
+                    } else if ((properties & BluetoothGattCharacteristic.PROPERTY_INDICATE) > 0) {
+                        Log.d(" Notify","use INDICATION");
+                        notifyDescriptor.setValue(BluetoothGattDescriptor.ENABLE_INDICATION_VALUE);
+                        result = mBluetoothGatt.writeDescriptor(notifyDescriptor);
+
+                    } else {
+
+                    }
+                }
+            } else {
+                Log.e("Autenthication","Unable to enable notification for " + characteristic.getUuid());
+            }
         }
 
         @Override
@@ -216,6 +287,7 @@ public class BluetoothLeService extends Service {
                         huamiSupport.phase3Initialize(builder);
                         huamiSupport.setInitialized(builder);
                         huamiSupport.performImmediately(builder);*/
+                            getDevice().setDeviceState(HADevice.State.INITIALIZED);
                             System.out.println("Autenticato");
                         }
                     } catch (Exception e) {
@@ -362,6 +434,9 @@ public class BluetoothLeService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
+
+        needsAuth = (boolean) intent.getExtras().get("firstTime");
+
         return mBinder;
     }
 

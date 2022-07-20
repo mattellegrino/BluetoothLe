@@ -15,13 +15,30 @@ public class HADevice implements Parcelable {
     private String deviceAddress;
     private State deviceState = State.NOT_CONNECTED;
 
-    public HADevice(String deviceName, String deviceAddress,BluetoothDevice device) {
+    public void setBluetoothDevice(BluetoothDevice bluetoothDevice) {
+        this.bluetoothDevice = bluetoothDevice;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
+    public void setDeviceAddress(String deviceAddress) {
+        this.deviceAddress = deviceAddress;
+    }
+
+    public void setDeviceState(State deviceState) {
+        this.deviceState = deviceState;
+    }
+
+    public HADevice(String deviceName, String deviceAddress, BluetoothDevice device) {
+        this.bluetoothDevice = device;
         this.deviceName = deviceName;
         this.deviceAddress = deviceAddress;
-        this.bluetoothDevice = device;
     }
 
     protected HADevice(Parcel in) {
+        bluetoothDevice = in.readParcelable(getClass().getClassLoader());
         deviceName = in.readString();
         deviceAddress = in.readString();
         deviceState = State.values()[in.readInt()];
@@ -68,9 +85,15 @@ public class HADevice implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeParcelable(bluetoothDevice, 0);
         parcel.writeString(deviceName);
         parcel.writeString(deviceAddress);
         parcel.writeInt(deviceState.ordinal());
+
+    }
+
+    public BluetoothDevice getBluetoothDevice() {
+        return bluetoothDevice;
     }
 
     public enum State {
