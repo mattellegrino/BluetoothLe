@@ -11,12 +11,14 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/app_name"
-        android:textSize="24sp"
+        android:textColor="#000000"
+        android:textSize="34sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.19" />
+        app:layout_constraintVertical_bias="0.123" />
 
     <ImageButton
         android:id="@+id/buttonbluetooth"
@@ -29,9 +31,20 @@
         android:textSize="20sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.746"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView"
-        app:layout_constraintVertical_bias="0.496" />
+        app:layout_constraintVertical_bias="0.492" />
+
+    <TextView
+        android:id="@+id/scanningText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="32dp"
+        android:text="Trova il tuo braccialetto"
+        app:layout_constraintBottom_toBottomOf="@+id/buttonbluetooth"
+        app:layout_constraintEnd_toStartOf="@+id/buttonbluetooth"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/buttonbluetooth" />
 
 </androidx.constraintlayout.widget.ConstraintLayout >

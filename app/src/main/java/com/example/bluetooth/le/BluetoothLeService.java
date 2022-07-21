@@ -45,11 +45,14 @@ import org.apache.commons.lang3.RandomStringUtils;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -67,6 +70,7 @@ public class BluetoothLeService extends Service {
 
     private BluetoothManager mBluetoothManager;
     private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothGattCharacteristic characteristicHRControlPoint;
     private String mBluetoothDeviceAddress;
     protected HADevice mDevice;
     private BluetoothGatt mBluetoothGatt;
@@ -247,6 +251,7 @@ public class BluetoothLeService extends Service {
                                          int status) {
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
+                System.out.println("onCharacteristicRead");
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
             }
         }
@@ -255,7 +260,7 @@ public class BluetoothLeService extends Service {
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
 
-
+            System.out.println("onCharacteristicChanged");
 
                 if (UUID_AUTHENTICATION.equals(characteristic.getUuid())) {
                     try {
@@ -280,6 +285,7 @@ public class BluetoothLeService extends Service {
                             //ransactionBuilder builder = createTransactionBuilder("Sending the encrypted random key to the device");
                             writeValue(mBluetoothGatt, characteristic, responseValue);
                             System.out.println("Autentic part 2");
+                            setCurrentTimeWithService();
 
                             //huamiSupport.setCurrentTimeWithService(builder);
                             // huamiSupport.performImmediately(builder);
@@ -288,19 +294,19 @@ public class BluetoothLeService extends Service {
                                 value[2] == HuamiService.AUTH_SUCCESS) {
                             //TransactionBuilder builder = createTransactionBuilder("Authenticated, now initialize phase 2");
                        /* builder.add(new SetDeviceStateAction(getDevice(), GBDevice.State.INITIALIZING, getContext()));
-                        huamiSupport.enableFurtherNotifications(builder, true);
-                        huamiSupport.requestDeviceInfo(builder);
-                        huamiSupport.phase2Initialize(builder);
-                        huamiSupport.phase3Initialize(builder);
-                        huamiSupport.setInitialized(builder);
-                        huamiSupport.performImmediately(builder);*/
+                            huamiSupport.enableFurtherNotifications(builder, true);
+                            huamiSupport.requestDeviceInfo(builder);
+                            huamiSupport.phase2Initialize(builder);
+                            huamiSupport.phase3Initialize(builder);
+                            huamiSupport.setInitialized(builder);
+                            huamiSupport.performImmediately(builder);*/
                             getDevice().setDeviceState(HADevice.State.INITIALIZED);
                             mDevice.sendDeviceUpdateIntent(HealthApplication.getContext());
                             SharedPreferences prefs = getApplicationContext().getSharedPreferences("Device",0);
                             prefs.edit().putString("MacAddress-MIBAND3", mDevice.getDeviceAddress()).apply();
                             prefs.edit().putString("State-MIBAND3", mDevice.getDeviceState().toString()).apply();
                             Log.d("MiBandPairingActivity","SharedPrefs" + prefs.getString("MacAddress-MIBAND3","-1"));
-
+                            phase3Initialize();
                             System.out.println("Autenticato");
                         }
                     } catch (Exception e) {
@@ -329,9 +335,155 @@ public class BluetoothLeService extends Service {
                     }
                 }
 
+
+
+
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
+
+    public void phase3Initialize() {
+        Log.i("BluetoothLeService","phase3Initialize...");
+        setDateDisplay();
+        setTimeFormat();
+        setDistanceUnit();
+        setRotateWristToSwitchInfo();
+        setHeartrateSleepSupport();
+        setHeartrateMeasurementInterval(1); //5 numero di minuti
+        //setUserInfo(builder);
+        //setWearLocation(builder);
+        // setFitnessGoal(builder);
+        // setDisplayItems(builder);
+        // setDoNotDisturb(builder);
+        // setActivateDisplayOnLiftWrist(builder);
+        //setDisplayCaller(builder);
+        //setGoalNotification(builder);
+        // setInactivityWarnings(builder);
+        //setDisconnectNotification(builder);
+        //setExposeHRThridParty(builder);
+        //sendReminders(builder);
+        // requestAlarms(builder);
+    }
+    public void setCurrentTimeWithService() {
+        GregorianCalendar now = BLETypeConversions.createCalendar();
+        byte[] bytes = getTimeBytes(now, TimeUnit.SECONDS);
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_CURRENT_TIME), bytes);
+            }
+        },500L);
+
+    }
+    public byte[] getTimeBytes(Calendar calendar, TimeUnit precision) {
+        byte[] bytes;
+        if (precision == TimeUnit.MINUTES) {
+            bytes = BLETypeConversions.shortCalendarToRawBytes(calendar);
+        } else if (precision == TimeUnit.SECONDS) {
+            bytes = BLETypeConversions.calendarToRawBytes(calendar);
+        } else {
+            throw new IllegalArgumentException("Unsupported precision, only MINUTES and SECONDS are supported till now");
+        }
+        byte[] tail = new byte[] { 0, BLETypeConversions.mapTimeZone(calendar, BLETypeConversions.TZ_FLAG_INCLUDE_DST_IN_TZ) };
+        // 0 = adjust reason bitflags? or DST offset?? , timezone
+//        byte[] tail = new byte[] { 0x2 }; // reason
+        byte[] all = BLETypeConversions.join(bytes, tail);
+        return all;
+    }
+
+    private void setDateDisplay() {
+        Log.d("BluetoothLeService","Setting DateDisplay..");
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.DATEFORMAT_TIME);
+            }
+        },500L);
+
+    }
+
+    private void setTimeFormat() {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.DATEFORMAT_TIME_24_HOURS);
+            }
+        },500L);
+
+    }
+
+    private void setDistanceUnit() {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.COMMAND_DISTANCE_UNIT_METRIC);
+            }
+        },500L);
+
+    }
+
+    private void setRotateWristToSwitchInfo() {
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                writeValue(mBluetoothGatt,getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION),HuamiService.COMMAND_ENABLE_ROTATE_WRIST_TO_SWITCH_INFO);
+            }
+        },500L);
+
+    }
+
+    private void setHeartrateSleepSupport() {
+        characteristicHRControlPoint = getCharacteristic(HuamiService.UUID_CHARACTERISTIC_HEART_RATE_CONTROL_POINT);
+        if (characteristicHRControlPoint != null) {
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    writeValue(mBluetoothGatt,characteristicHRControlPoint, HuamiService.COMMAND_ENABLE_HR_SLEEP_MEASUREMENT);
+                }
+            },500L);
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, true);
+
+
+            Log.i("BluetoothLeService","Enabling heartrate sleep support...");
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    writeValue(mBluetoothGatt,characteristicHRControlPoint, HuamiService.COMMAND_ENABLE_HR_SLEEP_MEASUREMENT);
+                }
+            },500L);
+
+
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, false); // TODO: this should actually be in some kind of finally-block in the queue. It should also be sent asynchronously after the notifications have completely arrived and processed.
+        }
+    }
+
+    private void setHeartrateMeasurementInterval(int minutes) {
+        if (characteristicHRControlPoint != null) {
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, true);
+            Log.i("BluetoothLeService","Setting heart rate measurement interval to " + minutes + " minutes");
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    writeValue(mBluetoothGatt,characteristicHRControlPoint, new byte[]{HuamiService.COMMAND_SET_PERIODIC_HR_MEASUREMENT_INTERVAL, (byte) minutes});
+                }
+            },500L);
+
+            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, false);  // TODO: this should actually be in some kind of finally-block in the queue. It should also be sent asynchronously after the notifications have completely arrived and processed.
+        }
+
+    }
+    public void enableFurtherNotifications() {
+        mBluetoothGatt.setCharacteristicNotification(getCharacteristic(HuamiService.UUID_CHARACTERISTIC_3_CONFIGURATION), true);
+        mBluetoothGatt.setCharacteristicNotification(getCharacteristic(HuamiService.UUID_CHARACTERISTIC_6_BATTERY_INFO), true);
+        mBluetoothGatt.setCharacteristicNotification(getCharacteristic(HuamiService.UUID_CHARACTERISTIC_DEVICEEVENT), true);
+    }
+
+    public BluetoothGattCharacteristic getCharacteristic(UUID uuid) {
+        if(mAvailableCharacteristics.containsKey(uuid))
+            return mAvailableCharacteristics.get(uuid);
+        return null;
+    }
+
 
     public static byte[] hexStringToByteArray(String s) {
         int len = s.length();
