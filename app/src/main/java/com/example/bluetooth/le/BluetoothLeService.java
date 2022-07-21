@@ -109,6 +109,8 @@ public class BluetoothLeService extends Service {
             try{
             if (newState == BluetoothProfile.STATE_CONNECTED) {
 
+                mDevice.setState(HADevice.State.CONNECTED);
+                mDevice.sendDeviceUpdateIntent(HealthApplication.getContext());
                 intentAction = ACTION_GATT_CONNECTED;
                 mConnectionState = STATE_CONNECTED;
                 broadcastUpdate(intentAction);
@@ -136,6 +138,7 @@ public class BluetoothLeService extends Service {
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
 
             //Controllo se lo stato del device è inizializzato e inizializzo o meno a seconda dello stato
+            System.out.println(status);
 
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 broadcastUpdate(ACTION_GATT_SERVICES_DISCOVERED);
@@ -150,10 +153,6 @@ public class BluetoothLeService extends Service {
                 Log.w("LeService","Services discovered, but device state is already" + getDevice().getDeviceState() + "for device" + getDevice().getDeviceName() + "so ignoring");
                 System.out.println("Stato del device" + getDevice().getDeviceState());
 
-                if(needsAuth)
-                {
-
-                }
                 initializeDevice();
 
 
@@ -186,11 +185,18 @@ public class BluetoothLeService extends Service {
                     {
                     getDevice().setDeviceState(HADevice.State.AUTHENTICATING);
                     byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
+
                     writeValue(mBluetoothGatt, authcharacteristic, sendKey);}
                     else {
                         getDevice().setDeviceState(HADevice.State.INITIALIZING);
                         assert authcharacteristic != null;
-                        writeValue(mBluetoothGatt,authcharacteristic,requestAuthNumber());
+                        new Timer().schedule(new TimerTask() {
+                            @Override
+                            public void run() {
+                                writeValue(mBluetoothGatt,authcharacteristic,requestAuthNumber());
+                            }
+                        },500L);
+
                     }
                     // here goes your code to delay
                 }
@@ -289,6 +295,12 @@ public class BluetoothLeService extends Service {
                         huamiSupport.setInitialized(builder);
                         huamiSupport.performImmediately(builder);*/
                             getDevice().setDeviceState(HADevice.State.INITIALIZED);
+                            mDevice.sendDeviceUpdateIntent(HealthApplication.getContext());
+                            SharedPreferences prefs = getApplicationContext().getSharedPreferences("Device",0);
+                            prefs.edit().putString("MacAddress-MIBAND3", mDevice.getDeviceAddress()).apply();
+                            prefs.edit().putString("State-MIBAND3", mDevice.getDeviceState().toString()).apply();
+                            Log.d("MiBandPairingActivity","SharedPrefs" + prefs.getString("MacAddress-MIBAND3","-1"));
+
                             System.out.println("Autenticato");
                         }
                     } catch (Exception e) {
@@ -437,7 +449,9 @@ public class BluetoothLeService extends Service {
     public IBinder onBind(Intent intent) {
 
         needsAuth = (boolean) intent.getExtras().get("firstTime");
+        System.out.println("NeedsAuth = " + needsAuth);
         this.mDevice = intent.getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
+
         return mBinder;
     }
 

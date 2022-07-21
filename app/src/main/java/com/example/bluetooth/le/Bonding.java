@@ -17,16 +17,18 @@ import android.widget.Toast;
 import androidx.annotation.RequiresApi;
 
 import java.util.Locale;
+import java.util.Objects;
 
 public class Bonding {
 
     private static final long DELAY_AFTER_BONDING = 1000; // 1s
-
+    private static Context cxt;
 
     public static BroadcastReceiver getPairingReceiver(final BondingInterface activity) {
         return new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                Log.d("Bonding","onReceive-getPairingReceiver");
                 if (HADevice.ACTION_DEVICE_CHANGED.equals(intent.getAction())) {
                     HADevice device = intent.getParcelableExtra(HADevice.EXTRA_DEVICE);
                     Log.d("Bonding","Pairing receiver: device changed: " + device);
@@ -105,8 +107,9 @@ public class Bonding {
     }
 
 
-    public static void tryBondThenComplete(BondingInterface bondingInterface, HADevice HAdevice) {
+    public static void tryBondThenComplete(BondingInterface bondingInterface, HADevice HAdevice, Context context) {
         bondingInterface.registerBroadcastReceivers();
+        cxt = context;
         BluetoothDevice device = HAdevice.getBluetoothDevice();
 
         try {
@@ -148,7 +151,14 @@ public class Bonding {
                 Intent intent = new Intent(HealthApplication.getContext(),DeviceControlActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,HADevice);
+                if(cxt.getApplicationContext().getSharedPreferences("Device", 0).getString("MacAddress-MIBAND3","-1").equals(HADevice.getDeviceAddress())) {
+                    intent.putExtra(DeviceControlActivity.EXTRA_CONNECT_FIRST_TIME,false);
+                    System.out.println("EXTRA CONNECT FIRST TIME: FALSE");
+                }
+                else{
                 intent.putExtra(DeviceControlActivity.EXTRA_CONNECT_FIRST_TIME,true);
+                    System.out.println("EXTRA CONNECT FIRST TIME: TRUE");
+                }
                 startDeviceControlActivity(intent);
             }
         }, DELAY_AFTER_BONDING);

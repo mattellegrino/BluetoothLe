@@ -165,6 +165,7 @@ public class DeviceControlActivity extends Activity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        System.out.println("Entrato in DeviceControlActivity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gatt_services_characteristics);
 
@@ -187,7 +188,7 @@ public class DeviceControlActivity extends Activity {
         gattServiceIntent.putExtra("firstTime",firstTime);
         gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,haDevice);
         bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-        finish();
+
     }
 
     @Override

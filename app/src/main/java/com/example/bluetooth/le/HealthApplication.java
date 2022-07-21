@@ -29,6 +29,7 @@ public class HealthApplication extends Application {
     private static final Lock dbLock = new ReentrantLock();
     //private static DeviceService deviceService;
     private static SharedPreferences sharedPrefs;
+    public static final String SHARED_PREFS = "sharedPrefs";
     private static final String PREFS_VERSION = "shared_preferences_version";
     //if preferences have to be migrated, increment the following and add the migration logic in migratePrefs below; see http://stackoverflow.com/questions/16397848/how-can-i-migrate-android-preferences-with-a-new-version
     private static final int CURRENT_PREFS_VERSION = 10;
@@ -50,6 +51,7 @@ public class HealthApplication extends Application {
     private static Locale language;
     public HealthApplication() {
         context = this;
+
         // don't do anything here, add it to onCreate instead
     }
 
@@ -69,6 +71,10 @@ public class HealthApplication extends Application {
 
     public static HealthApplication app() {
         return app;
+    }
+
+    public static void setSharedPrefs(SharedPreferences sharedPrefs) {
+        HealthApplication.sharedPrefs = sharedPrefs;
     }
 
 

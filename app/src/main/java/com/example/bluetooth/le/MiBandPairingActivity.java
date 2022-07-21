@@ -37,7 +37,7 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     private void startPairing() {
         isPairing = true;
-        Bonding.tryBondThenComplete(this, HAdevice);
+        Bonding.tryBondThenComplete(this, HAdevice,getContext());
 
     }
 
@@ -59,13 +59,12 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
             BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(macAddress);
             if (device != null && HAdevice.getBluetoothDevice().getBondState() == BluetoothDevice.BOND_NONE) {
                 SharedPreferences prefs = HealthApplication.getSharedPrefs();
-                prefs.edit().putString("MacAddress-MIBAND3", macAddress).apply();
-                Log.d("MiBandPairingActivity","SharedPrefs" + prefs.getString("MacAddress-MIBAND3","-1"));
             }
+
             Intent intent = new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);
         }
-        finish();
+
     }
 
     @Override
@@ -73,21 +72,31 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
         return HAdevice;
     }
 
-    @Override
+
+
     public void unregisterBroadcastReceivers() {
-        //unregisterReceiver(pairingReceiver);
-        unregisterReceiver(bondingReceiver);
+        safeUnregisterBroadcastReceiver(this,pairingReceiver);
+        safeUnregisterBroadcastReceiver(this,bondingReceiver);
+    }
+
+    public static boolean safeUnregisterBroadcastReceiver(Context context, BroadcastReceiver receiver) {
+        try {
+            context.unregisterReceiver(receiver);
+            return true;
+        } catch (IllegalArgumentException ex) {
+            return false;
+        }
     }
 
     @Override
     public void registerBroadcastReceivers() {
-        //LocalBroadcastManager.getInstance(this).registerReceiver(pairingReceiver, new IntentFilter(HADevice.ACTION_DEVICE_CHANGED));
+        LocalBroadcastManager.getInstance(this).registerReceiver(pairingReceiver, new IntentFilter(HADevice.ACTION_DEVICE_CHANGED));
         registerReceiver(bondingReceiver, new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED));
     }
 
     @Override
     public Context getContext() {
-        return null;
+        return this;
     }
 
 
@@ -131,6 +140,6 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
 
     private void stopPairing() {
         isPairing = false;
-        Bonding.stopBluetoothBonding(HAdevice.getBluetoothDevice());
+        //Bonding.stopBluetoothBonding(HAdevice.getBluetoothDevice());
     }
 }
