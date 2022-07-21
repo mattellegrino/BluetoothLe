@@ -147,7 +147,9 @@
 
     <string name ="login_email_shared">com.example.myapp.PREFERENCE_FILE_KEY</string>
     <string name ="email_login_shared">com.example.myapp.PREFERENCE_FILE_KEY_2</string>
-
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="deviceName">"Nome dispositivo"</string>
+    <string name="deviceAddress">"Indirizzo dispositivo"</string>
     <!-- Facebook application ID and custom URL scheme (app ID prefixed by 'fb'). -->
    <!-- <string name="facebook_application_id" translatable="false">healthapp2022_fb</string>
     <string name="facebook_login_protocol_scheme" translatable="false">fbhealthapp2022_fb</string> -->

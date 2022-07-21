@@ -31,6 +31,12 @@ public class HADevice implements Parcelable {
         this.deviceState = deviceState;
     }
 
+    public HADevice(String deviceName, String deviceAddress) {
+        this.deviceName = deviceName;
+        this.deviceAddress = deviceAddress;
+    }
+
+
     public HADevice(String deviceName, String deviceAddress, BluetoothDevice device) {
         this.bluetoothDevice = device;
         this.deviceName = deviceName;

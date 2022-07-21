@@ -45,9 +45,6 @@
     <string name="dispositivi_trovati">Dispositivi trovati</string>
 
 
-
-
-
     <!-- Mad project  -->
 
     <string name="navigation_drawer_open">Apri barra navigazione</string>
@@ -143,8 +140,12 @@
     <string name="dishenjoy">Ti è piaciuto questo piatto?</string>
     <string name="give_us_your_rating">Dicci cosa ne pensi!</string>
 
-    <string name ="login_email_shared">com.example.myapp.PREFERENCE_FILE_KEY</string>
-    <string name ="email_login_shared">com.example.myapp.PREFERENCE_FILE_KEY_2</string>
+    <string name="login_email_shared">com.example.myapp.PREFERENCE_FILE_KEY</string>
+    <string name="email_login_shared">com.example.myapp.PREFERENCE_FILE_KEY_2</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="deviceName">"Device Name"</string>
+    <string name="deviceAddress">"Device Address"</string>
     <!-- Facebook application ID and custom URL scheme (app ID prefixed by 'fb'). -->
     <!-- <string name="facebook_application_id" translatable="false">healthapp2022_fb</string>
      <string name="facebook_login_protocol_scheme" translatable="false">fbhealthapp2022_fb</string> -->

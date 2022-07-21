@@ -39,6 +39,8 @@ import android.widget.Toast;
 
 import androidx.annotation.RequiresApi;
 
+import com.example.bluetooth.le.sample.MiBandActivitySample;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -185,13 +187,24 @@ public class BluetoothLeService extends Service {
                         }
                     },500L);
 
+                    /* shared preference to record the status */
+                    SharedPreferences pref = getApplicationContext().getSharedPreferences("firstTime", 0); // 0 - for private mode
+                    SharedPreferences.Editor editor = pref.edit();
+                    //valore sovrascritto ogni volta dipende dallo stato di needsAuth
+                    // se needsAuth = true, rimane null
+                    //se  = false, allora e' bonded
+                    /*   */
                     if(needsAuth)
                     {
+                        editor.putString("isBonded", "firstTime");
+                        editor.apply();
                     getDevice().setDeviceState(HADevice.State.AUTHENTICATING);
                     byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
 
                     writeValue(mBluetoothGatt, authcharacteristic, sendKey);}
                     else {
+                        editor.putString("isBonded", "bonded");
+                        editor.apply();
                         getDevice().setDeviceState(HADevice.State.INITIALIZING);
                         assert authcharacteristic != null;
                         new Timer().schedule(new TimerTask() {
@@ -256,11 +269,20 @@ public class BluetoothLeService extends Service {
             }
         }
 
+
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt,
                                             BluetoothGattCharacteristic characteristic) {
 
             System.out.println("onCharacteristicChanged");
+
+            if (HuamiService.UUID_CHARACTERISTIC_5_ACTIVITY_DATA.equals(characteristic.getUuid())) {
+                bufferActivityData(characteristic.getValue());
+            }
+            else if (HuamiService.UUID_UNKNOWN_CHARACTERISTIC4.equals(characteristic.getUuid())) {
+               // handleActivityMetadata(characteristic.getValue());
+            }
+
 
                 if (UUID_AUTHENTICATION.equals(characteristic.getUuid())) {
                     try {
@@ -341,6 +363,33 @@ public class BluetoothLeService extends Service {
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
     };
+
+
+    protected void bufferActivityData(byte[] value) {
+        int len = value.length;
+
+        if (len % 4 != 1) {
+            throw new AssertionError("Unexpected activity array size: " + len);
+        }
+
+        for (int i = 1; i < len; i += 4) {
+            MiBandActivitySample sample = createSample(value[i], value[i + 1], value[i + 2], value[i + 3]); // lgtm [java/index-out-of-bounds]
+            System.out.println("Category" + sample.getRawKind());
+            System.out.println("Intensity" + sample.getRawIntensity());
+            System.out.println("Steps" + sample.getSteps());
+            System.out.println("Heartrate" + sample.getHeartRate());
+        }
+    }
+
+    private MiBandActivitySample createSample(byte category, byte intensity, byte steps, byte heartrate) {
+        MiBandActivitySample sample = new MiBandActivitySample();
+        sample.setRawKind(category & 0xff);
+        sample.setRawIntensity(intensity & 0xff);
+        sample.setSteps(steps & 0xff);
+        sample.setHeartRate(heartrate & 0xff);
+
+        return sample;
+    }
 
     public void phase3Initialize() {
         Log.i("BluetoothLeService","phase3Initialize...");
