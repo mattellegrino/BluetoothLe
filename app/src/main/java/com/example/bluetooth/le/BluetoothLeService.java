@@ -185,13 +185,23 @@ public class BluetoothLeService extends Service {
                         }
                     },500L);
 
+                    /* shared preference to record the status */
+                    SharedPreferences pref = getApplicationContext().getSharedPreferences("firstTime", 0); // 0 - for private mode
+                    SharedPreferences.Editor editor = pref.edit();
+                    //valore sovrascritto ogni volta dipende dallo stato di needsAuth
+                    // se needsAuth = true, rimane null
+                    //se  = false, allora e' bonded
+                    /*   */
                     if(needsAuth)
                     {
+                        editor.putString("isBonded", "firstTime");
+                        editor.apply();
                     getDevice().setDeviceState(HADevice.State.AUTHENTICATING);
                     byte[] sendKey = org.apache.commons.lang3.ArrayUtils.addAll(new byte[]{HuamiService.AUTH_SEND_KEY, 0}, getSecretKey());
-
                     writeValue(mBluetoothGatt, authcharacteristic, sendKey);}
                     else {
+                        editor.putString("isBonded", "bonded");
+                        editor.apply();
                         getDevice().setDeviceState(HADevice.State.INITIALIZING);
                         assert authcharacteristic != null;
                         new Timer().schedule(new TimerTask() {
