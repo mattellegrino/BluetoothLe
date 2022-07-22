@@ -30,7 +30,7 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
         setContentView(R.layout.activity_mi_band_pairing);
         message = findViewById(R.id.miband_pair_message);
         HAdevice = getIntent().getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
-        System.out.println(HAdevice.getDeviceAddress());
+        Log.d("MibandPairingActivity",HAdevice.getDeviceAddress());
         startPairing();
     }
 

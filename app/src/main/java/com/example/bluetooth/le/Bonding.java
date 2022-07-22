@@ -151,6 +151,8 @@ public class Bonding {
                 Intent intent = new Intent(HealthApplication.getContext(),DeviceControlActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,HADevice);
+                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,HADevice.getDeviceName());
+                intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,HADevice.getDeviceAddress());
                 if(cxt.getApplicationContext().getSharedPreferences("Device", 0).getString("MacAddress-MIBAND3","-1").equals(HADevice.getDeviceAddress())) {
                     intent.putExtra(DeviceControlActivity.EXTRA_CONNECT_FIRST_TIME,false);
                     System.out.println("EXTRA CONNECT FIRST TIME: FALSE");

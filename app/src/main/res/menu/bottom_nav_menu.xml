@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:title="Home"
+    <item android:title="@string/home_menu"
         android:icon="@drawable/ic_baseline_home_24"
         android:id="@+id/home"/>
-    <item android:title="Sleep"
+    <item android:title="@string/sleep_menu"
         android:icon="@drawable/ic_baseline_bedtime_24"
         android:id="@+id/sleep"/>
-    <item android:title="Activity"
+    <item android:title="@string/activity_menu"
         android:icon="@drawable/ic_baseline_run_circle_24"
         android:id="@+id/activity"/>
 </menu>

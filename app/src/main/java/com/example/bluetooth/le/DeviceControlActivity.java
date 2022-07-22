@@ -30,6 +30,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -192,11 +193,32 @@ public class DeviceControlActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gatt_services_characteristics);
         BottomNavigationView bnv = findViewById(R.id.bottomNavigationView);
+        final Intent intent = getIntent();
+        HADevice haDevice = intent.getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
+        mDeviceName = intent.getExtras().getString(DeviceControlActivity.EXTRAS_DEVICE_NAME);
+        mDeviceAddress = intent.getExtras().getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS);
+        Log.d("DeviceControl",mDeviceName + mDeviceAddress);
+        // Sets up UI references.
+        ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
+        ((TextView) findViewById(R.id.device_name)).setText(mDeviceName);
+        //mGattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list);
+        //mGattServicesList.setOnChildClickListener(servicesListClickListner);
+        mConnectionState = (TextView) findViewById(R.id.connection_state);
+        mDataField = (TextView) findViewById(R.id.data_value);
+
+        //getActionBar().setTitle(mDeviceName);
+        //getActionBar().setDisplayHomeAsUpEnabled(true);
+        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
+        firstTime = (boolean) intent.getExtras().get(EXTRA_CONNECT_FIRST_TIME);
+        gattServiceIntent.putExtra("firstTime",firstTime);
+        gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,haDevice);
+        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
         bnv.setOnItemSelectedListener(item -> {
 
             switch (item.getItemId()) {
 
                 case R.id.home:
+                    replaceFragment(new HomeFragment());
                     break;
                 case R.id.sleep:
                     break;
@@ -223,28 +245,6 @@ public class DeviceControlActivity extends AppCompatActivity {
 
             return true;
         });
-
-        final Intent intent = getIntent();
-        HADevice haDevice = intent.getParcelableExtra(DeviceControlActivity.EXTRAS_DEVICE);
-        mDeviceName = intent.getExtras().getString(DeviceControlActivity.EXTRAS_DEVICE_NAME);
-        mDeviceAddress = intent.getExtras().getString(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS);
-
-        // Sets up UI references.
-        ((TextView) findViewById(R.id.device_address)).setText(mDeviceAddress);
-        ((TextView) findViewById(R.id.device_name)).setText(mDeviceName);
-        //mGattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list);
-        //mGattServicesList.setOnChildClickListener(servicesListClickListner);
-        mConnectionState = (TextView) findViewById(R.id.connection_state);
-        mDataField = (TextView) findViewById(R.id.data_value);
-
-        //getActionBar().setTitle(mDeviceName);
-        //getActionBar().setDisplayHomeAsUpEnabled(true);
-        Intent gattServiceIntent = new Intent(this, BluetoothLeService.class);
-        firstTime = (boolean) intent.getExtras().get(EXTRA_CONNECT_FIRST_TIME);
-        gattServiceIntent.putExtra("firstTime",firstTime);
-        gattServiceIntent.putExtra(DeviceControlActivity.EXTRAS_DEVICE,haDevice);
-        bindService(gattServiceIntent, mServiceConnection, BIND_AUTO_CREATE);
-
     }
 
     @Override
@@ -268,6 +268,18 @@ public class DeviceControlActivity extends AppCompatActivity {
         super.onDestroy();
         unbindService(mServiceConnection);
         mBluetoothLeService = null;
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            //setContentView(R.layout.gatt_services_characteristics);
+
+        } else {
+           // setContentView(R.layout.gatt_services_characteristics);
+        }
     }
 
     @Override

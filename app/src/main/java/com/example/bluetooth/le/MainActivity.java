@@ -42,7 +42,6 @@ public class MainActivity extends AppCompatActivity {
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,sharedprefaddress);
             intent.putExtra(DeviceControlActivity.EXTRA_CONNECT_FIRST_TIME,false);
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE, haDevice);
-
             startActivity(intent);
         }
          else

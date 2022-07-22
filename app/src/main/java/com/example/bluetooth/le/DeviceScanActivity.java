@@ -221,6 +221,7 @@ public class DeviceScanActivity extends ListActivity {
         {
             HADevice haDevice = new HADevice(device.getName(),device.getAddress(),device);
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,device.getName());
+            Log.d("ScanActivity", device.getName() + device.getAddress());
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,device.getAddress());
             intentPairing.putExtra(DeviceControlActivity.EXTRAS_DEVICE, haDevice);
             if (mScanning) {
@@ -238,7 +239,7 @@ public class DeviceScanActivity extends ListActivity {
             startActivity(intentPairing);
             //device.createBond();
             //startActivity(intent);
-            finish();
+            //finish();
         }
         catch( SecurityException se)
         {

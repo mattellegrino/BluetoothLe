@@ -11,12 +11,14 @@
         android:layout_height="match_parent">
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="377dp"
+            android:layout_width="0dp"
             android:layout_height="376dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent">
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.498">
 
             <TextView
                 android:id="@+id/steps_title"
@@ -28,6 +30,7 @@
                 android:inputType="textPersonName"
                 android:text="@string/steps"
                 android:textAlignment="center"
+                android:textColor="#FFFFFF"
                 android:textSize="20sp"
                 app:layout_constraintBottom_toBottomOf="@+id/distance_title"
                 app:layout_constraintEnd_toStartOf="@+id/distance_title"
@@ -44,6 +47,7 @@
                 android:gravity="center"
                 android:text="@string/distance"
                 android:textAlignment="center"
+                android:textColor="#FFFFFF"
                 android:textSize="20sp"
                 app:layout_constraintBottom_toBottomOf="@+id/calories_title"
                 app:layout_constraintEnd_toStartOf="@+id/calories_title"
@@ -60,6 +64,7 @@
                 android:gravity="center"
                 android:text="@string/calories"
                 android:textAlignment="center"
+                android:textColor="#FFFFFF"
                 android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
@@ -70,8 +75,10 @@
                 android:id="@+id/calories_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="24dp"
                 android:text="TextView"
+                android:textSize="20sp"
+                android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="@+id/calories_title"
                 app:layout_constraintStart_toStartOf="@+id/calories_title"
                 app:layout_constraintTop_toBottomOf="@+id/calories_title" />
@@ -80,10 +87,13 @@
                 android:id="@+id/steps_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="24dp"
                 android:text="TextView"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@+id/distance_count"
                 app:layout_constraintEnd_toEndOf="@+id/steps_title"
-                app:layout_constraintHorizontal_bias="0.6"
+                app:layout_constraintHorizontal_bias="0.529"
                 app:layout_constraintStart_toStartOf="@+id/steps_title"
                 app:layout_constraintTop_toBottomOf="@+id/steps_title" />
 
@@ -91,8 +101,11 @@
                 android:id="@+id/distance_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
+                android:layout_marginTop="24dp"
                 android:text="TextView"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toBottomOf="@+id/calories_count"
                 app:layout_constraintEnd_toEndOf="@+id/distance_title"
                 app:layout_constraintStart_toStartOf="@+id/distance_title"
                 app:layout_constraintTop_toBottomOf="@+id/distance_title" />

@@ -293,12 +293,9 @@ public class BluetoothLeService extends Service {
                                 value[2] == HuamiService.AUTH_SUCCESS) {
                             System.out.println("Autentic part 1");
                             //TransactionBuilder builder = createTransactionBuilder("Sending the secret key to the device");
-                            new Timer().schedule(new TimerTask() {
-                                @Override
-                                public void run() {
-                                    writeValue(mBluetoothGatt, characteristic, new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0});
-                                }
-                            },500L);
+
+                            writeValue(mBluetoothGatt, characteristic, new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0});
+
 
 
                             //huamiSupport.performImmediately(builder);
@@ -311,12 +308,9 @@ public class BluetoothLeService extends Service {
                                     new byte[]{(byte) (HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER), 0}, eValue);
 
                             //ransactionBuilder builder = createTransactionBuilder("Sending the encrypted random key to the device");
-                            new Timer().schedule(new TimerTask() {
-                                @Override
-                                public void run() {
+
                                     writeValue(mBluetoothGatt, characteristic, responseValue);
-                                }
-                            },500L);
+
 
                             System.out.println("Autentic part 2");
                             setCurrentTimeWithService();
@@ -632,7 +626,6 @@ public class BluetoothLeService extends Service {
                 else if (UUID_BATTERY_INFO.equals(characteristic.getUuid()))
                 {
                    System.out.println("Valore esadecimale Battery Info: " + stringBuilder.toString());
-
                 }
                 else
                 intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());

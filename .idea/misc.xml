@@ -10,9 +10,10 @@
         <entry key="app/src/main/res/layout/activity_bonded.xml" value="0.23125" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.22" />
         <entry key="app/src/main/res/layout/activity_mi_band_pairing.xml" value="0.25" />
-        <entry key="app/src/main/res/layout/fragment_activity.xml" value="0.33" />
+        <entry key="app/src/main/res/layout/fragment_activity.xml" value="0.24048913043478262" />
         <entry key="app/src/main/res/layout/fragment_blank.xml" value="0.23125" />
         <entry key="app/src/main/res/layout/fragment_first.xml" value="0.25" />
+        <entry key="app/src/main/res/layout/fragment_home.xml" value="0.2890123984608807" />
         <entry key="app/src/main/res/layout/gatt_services_characteristics.xml" value="0.33" />
         <entry key="app/src/main/res/layout/listitem_device.xml" value="0.33" />
         <entry key="app/src/main/res/menu/bottom_nav_menu.xml" value="0.26979166666666665" />
