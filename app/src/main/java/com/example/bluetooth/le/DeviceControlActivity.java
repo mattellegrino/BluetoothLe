@@ -70,11 +70,15 @@ public class DeviceControlActivity extends AppCompatActivity {
     private TextView mDataField;
     private String mDeviceName;
     private String mDeviceAddress;
+    private String Steps;
+    private Bundle bundle = new Bundle();
+    private Fragment activityfragment = new ActivityFragment();
     private ExpandableListView mGattServicesList;
     private BluetoothLeService mBluetoothLeService;
     private ArrayList<ArrayList<BluetoothGattCharacteristic>> mGattCharacteristics =
             new ArrayList<ArrayList<BluetoothGattCharacteristic>>();
     private boolean mConnected = false;
+    private BluetoothGattCharacteristic stepsCharacteristic;
     private BluetoothGattCharacteristic mNotifyCharacteristic;
 
     private final String LIST_NAME = "NAME";
@@ -127,6 +131,14 @@ public class DeviceControlActivity extends AppCompatActivity {
                 //displayGattServices(listservices);
             } else if (BluetoothLeService.ACTION_DATA_AVAILABLE.equals(action)) {
                 displayData(intent.getStringExtra(BluetoothLeService.EXTRA_DATA));
+                Bundle extras = intent.getExtras();
+                if(extras!=null) {
+                    if (extras.containsKey("Steps")){
+                        Steps = extras.get("Steps").toString();
+                        bundle.putString("Steps",Steps);
+                        activityfragment.setArguments(bundle);
+                    }
+                }
             }
         }
     };
@@ -177,22 +189,35 @@ public class DeviceControlActivity extends AppCompatActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        System.out.println("Entrato in DeviceControlActivity");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.gatt_services_characteristics);
-
         BottomNavigationView bnv = findViewById(R.id.bottomNavigationView);
         bnv.setOnItemSelectedListener(item -> {
 
             switch (item.getItemId()) {
 
                 case R.id.home:
-
                     break;
                 case R.id.sleep:
                     break;
                 case R.id.activity:
-                    replaceFragment(new ActivityFragment());
+                    stepsCharacteristic = mBluetoothLeService.getCharacteristic(HuamiService.UUID_CHARACTERISTIC_7_REALTIME_STEPS);
+                    final int characteristicProp = stepsCharacteristic.getProperties();
+                    if ((characteristicProp | BluetoothGattCharacteristic.PROPERTY_READ) > 0) {
+                        // If there is an active notification on a characteristic, clear
+                        // it first so it doesn't update the data field on the user interface.
+                        if (mNotifyCharacteristic != null) {
+                            mBluetoothLeService.setCharacteristicNotification(
+                                    mNotifyCharacteristic, false);
+                            mNotifyCharacteristic = null;
+                        }
+                        mBluetoothLeService.readCharacteristic(stepsCharacteristic);
+                    }
+                    if ((characteristicProp | BluetoothGattCharacteristic.PROPERTY_NOTIFY) > 0) {
+                        mNotifyCharacteristic = stepsCharacteristic;
+                        mBluetoothLeService.setCharacteristicNotification(stepsCharacteristic, true);
+                    }
+                    replaceFragment(activityfragment);
                     break;
             }
 
@@ -285,6 +310,7 @@ public class DeviceControlActivity extends AppCompatActivity {
 
     private void displayData(String data) {
         if (data != null) {
+            bundle.putString("edttext", "From Activity");
             mDataField.setText(data);
         }
     }

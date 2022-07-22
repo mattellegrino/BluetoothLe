@@ -150,6 +150,9 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="deviceName">"Nome dispositivo"</string>
     <string name="deviceAddress">"Indirizzo dispositivo"</string>
+    <string name="steps"> Passi </string>
+    <string name="distance"> Distanza </string>
+    <string name="calories"> Calorie </string>
     <!-- Facebook application ID and custom URL scheme (app ID prefixed by 'fb'). -->
    <!-- <string name="facebook_application_id" translatable="false">healthapp2022_fb</string>
     <string name="facebook_login_protocol_scheme" translatable="false">fbhealthapp2022_fb</string> -->

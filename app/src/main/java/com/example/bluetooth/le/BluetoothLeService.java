@@ -212,7 +212,7 @@ public class BluetoothLeService extends Service {
                             public void run() {
                                 writeValue(mBluetoothGatt,authcharacteristic,requestAuthNumber());
                             }
-                        },500L);
+                        },700L);
 
                     }
                     // here goes your code to delay
@@ -293,7 +293,13 @@ public class BluetoothLeService extends Service {
                                 value[2] == HuamiService.AUTH_SUCCESS) {
                             System.out.println("Autentic part 1");
                             //TransactionBuilder builder = createTransactionBuilder("Sending the secret key to the device");
-                            writeValue(mBluetoothGatt, characteristic, new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0});
+                            new Timer().schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    writeValue(mBluetoothGatt, characteristic, new byte[]{HuamiService.AUTH_REQUEST_RANDOM_AUTH_NUMBER, 0});
+                                }
+                            },500L);
+
 
                             //huamiSupport.performImmediately(builder);
                         } else if (value[0] == HuamiService.AUTH_RESPONSE &&
@@ -305,7 +311,13 @@ public class BluetoothLeService extends Service {
                                     new byte[]{(byte) (HuamiService.AUTH_SEND_ENCRYPTED_AUTH_NUMBER), 0}, eValue);
 
                             //ransactionBuilder builder = createTransactionBuilder("Sending the encrypted random key to the device");
-                            writeValue(mBluetoothGatt, characteristic, responseValue);
+                            new Timer().schedule(new TimerTask() {
+                                @Override
+                                public void run() {
+                                    writeValue(mBluetoothGatt, characteristic, responseValue);
+                                }
+                            },500L);
+
                             System.out.println("Autentic part 2");
                             setCurrentTimeWithService();
 
@@ -398,7 +410,7 @@ public class BluetoothLeService extends Service {
         setDistanceUnit();
         setRotateWristToSwitchInfo();
         setHeartrateSleepSupport();
-        setHeartrateMeasurementInterval(1); //5 numero di minuti
+        setHeartrateMeasurementInterval(10); //5 numero di minuti
         //setUserInfo(builder);
         //setWearLocation(builder);
         // setFitnessGoal(builder);
@@ -508,14 +520,21 @@ public class BluetoothLeService extends Service {
 
     private void setHeartrateMeasurementInterval(int minutes) {
         if (characteristicHRControlPoint != null) {
-            mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, true);
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, true);
+                }
+            },500L);
+
+
             Log.i("BluetoothLeService","Setting heart rate measurement interval to " + minutes + " minutes");
             new Timer().schedule(new TimerTask() {
                 @Override
                 public void run() {
                     writeValue(mBluetoothGatt,characteristicHRControlPoint, new byte[]{HuamiService.COMMAND_SET_PERIODIC_HR_MEASUREMENT_INTERVAL, (byte) minutes});
                 }
-            },500L);
+            },700L);
 
             mBluetoothGatt.setCharacteristicNotification(characteristicHRControlPoint, false);  // TODO: this should actually be in some kind of finally-block in the queue. It should also be sent asynchronously after the notifications have completely arrived and processed.
         }
@@ -608,6 +627,7 @@ public class BluetoothLeService extends Service {
                     }
                     finaldata = sb.toString();
                     intent.putExtra(EXTRA_DATA, new String(data) + "\n" + Integer.parseInt(finaldata,16));
+                    intent.putExtra("Steps", Integer.parseInt(finaldata,16));
                 }
                 else if (UUID_BATTERY_INFO.equals(characteristic.getUuid()))
                 {
