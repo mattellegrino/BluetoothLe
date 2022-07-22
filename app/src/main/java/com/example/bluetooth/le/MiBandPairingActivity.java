@@ -57,9 +57,19 @@ public class MiBandPairingActivity  extends AppCompatActivity implements Bonding
             // devices, as bonded devices are displayed anyway.
             String macAddress = HAdevice.getDeviceAddress();
             BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(macAddress);
-            if (device != null && HAdevice.getBluetoothDevice().getBondState() == BluetoothDevice.BOND_NONE) {
-                SharedPreferences prefs = HealthApplication.getSharedPrefs();
+            try
+            {
+                if (device != null && HAdevice.getBluetoothDevice().getBondState() == BluetoothDevice.BOND_NONE) {
+                    SharedPreferences prefs = HealthApplication.getDeviceSpecificSharedPrefs(macAddress);
+                   // non utilizzate ancora ma possono essere utili?
+                }
             }
+            catch(SecurityException se)
+            {
+                se.printStackTrace();
+                throw se;
+            }
+
 
             Intent intent = new Intent(this, MainActivity.class).setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
             startActivity(intent);

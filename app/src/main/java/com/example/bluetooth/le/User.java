@@ -2,58 +2,31 @@ package com.example.bluetooth.le;
 
 public class User {
     private String ID;
-    private String name;
-    private String surname;
-    private String city;
-    private String address;
-    private String telephone;
     private String email;
     private String mac_address;
+    private String heart_rate;
+    private String current_steps;
 
 
-    User(String ID, String name, String surname, String city, String address, String telephone, String email, String mac_address){
+    User(String ID, String email, String mac_address,String heart_rate,String current_steps){
         this.ID = ID;
-        this.name = name;
-        this.surname = surname;
-        this.city = city;
-        this.address = address;
-        this.telephone = telephone;
         this.email = email;
         this.mac_address= mac_address;
+        this.heart_rate=heart_rate;
+        this.current_steps=current_steps;
     }
 
     User(String ID, String email){
         this.ID = ID;
-        this.name = "";
-        this.surname = "";
-        this.city = "";
-        this.address = "";
-        this.telephone = "";
         this.email = email;
         this.mac_address="";
+        this.heart_rate="";
+        this.current_steps="";
     }
     /** GETTER **/
     public String getID() {
         return ID;
     }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getSurname() {
-        return surname;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public String getTelephone() {return telephone; }
 
     public String getEmail() {
         return email;
@@ -61,29 +34,13 @@ public class User {
 
     public String getMac_address() { return mac_address; }
 
+    public String getCurrent_steps() { return current_steps; }
+
+    public String getHeart_rate() { return heart_rate; }
+
     /** SETTER **/
     public void setID(String ID) {
         this.ID = ID;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setSurname(String surname) {
-        this.surname = surname;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public void setTelephone(String telephone) {
-        this.telephone = telephone;
     }
 
     public void setEmail(String email) {
@@ -91,5 +48,10 @@ public class User {
     }
 
     public void setMac_address(String mac_address) { this.mac_address= mac_address;}
+
+    public void setCurrent_steps(String current_steps) { this.current_steps = current_steps;}
+
+    public void setHeart_rate(String heart_rate) {this.heart_rate = heart_rate;}
+
 
 }
