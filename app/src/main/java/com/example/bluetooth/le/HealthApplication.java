@@ -7,8 +7,13 @@ import android.content.SharedPreferences;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
+
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,6 +65,36 @@ public class HealthApplication extends Application {
             return;
         }
         context.getSharedPreferences("devicesettings_" + deviceIdentifier, Context.MODE_PRIVATE).edit().clear().apply();
+    }
+
+    public static void commit_database_steps(String finaldata) {
+
+    }
+
+
+    private void RetrieveUserInfoAndPush(DataSnapshot customersSnapshot, String email){
+
+        // for each customer
+        for (DataSnapshot ds : customersSnapshot.getChildren()){
+
+            String mail = (String)ds.child("email").getValue();
+
+            // if the current element has the same email as the one written by the user (or last session)
+            if (email.equals(mail)){
+
+                // set the rest id
+                user.setEmail(email);
+                user.setMac_address((String)ds.child("mac_address").getValue());
+                user.setHeart_rate((String)ds.child("heart_rate").getValue());
+                user.setCurrent_steps((String)ds.child("current_steps").getValue());
+                // tell the application to use this customer id and mail
+                setUser(user);
+
+                // Open the reservation list activity
+                Intent intent = new Intent(this, MainActivity.class);
+                startActivity(intent);
+            }
+        }
     }
 
     public User getUser() {

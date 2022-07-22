@@ -569,6 +569,7 @@ public class BluetoothLeService extends Service {
                     }
                     finaldata = sb.toString();
                     intent.putExtra(EXTRA_DATA, new String(data) + "\n" + Integer.parseInt(finaldata,16));
+                    HealthApplication.commit_database_steps(finaldata);
                 }
                 else if (UUID_BATTERY_INFO.equals(characteristic.getUuid()))
                 {
