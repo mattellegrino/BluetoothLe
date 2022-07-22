@@ -33,14 +33,9 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
 
     private EditText et_customer_mail;
     private EditText et_customer_psw;
-    private Button btn_login;
-    private Button btn_newcustomer;
 
     private String user_id;
     private String customer_mail;
-
-    private LoginButtonListener lbtn_listener;
-    private NewCustButtonListener nrbtn_listener;
 
     private DatabaseReference reference;
     private FirebaseAuth auth;
@@ -49,18 +44,19 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
 
     private CheckBox checkbox;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        user = new User("","","","","","","","");
+        user = new User("","","","",",");
 
         // reference to the database's customers root node
         reference = FirebaseDatabase.getInstance().getReference();
 
         // get an instance of the authentication handler
         auth = FirebaseAuth.getInstance();
+
+        HealthApplication.setDatabase(reference,auth);
 
         // try to authenticate user if an auth session is present
         if (auth.getCurrentUser() != null){
@@ -82,16 +78,16 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
 
             et_customer_mail = findViewById(R.id.cust_email);
             et_customer_psw = findViewById(R.id.rest_password);
-            btn_login = findViewById(R.id.login_btn);
-            btn_newcustomer = findViewById(R.id.newcust_btn);
+            Button btn_login = findViewById(R.id.login_btn);
+            Button btn_newcustomer = findViewById(R.id.newcust_btn);
             checkbox = findViewById(R.id.checkBox);
 
             // create a listener to handle clicks on login button
-            lbtn_listener = new LoginButtonListener(this);
+            LoginButtonListener lbtn_listener = new LoginButtonListener(this);
             btn_login.setOnClickListener(lbtn_listener);
 
             // create a listener to handle clicks on new customer button
-            nrbtn_listener = new NewCustButtonListener(this);
+            NewCustButtonListener nrbtn_listener = new NewCustButtonListener(this);
             btn_newcustomer.setOnClickListener(nrbtn_listener);
 
             SharedPreferences pref = getApplicationContext().getSharedPreferences("login_mail", 0); // 0 - for private mode
@@ -155,12 +151,9 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
                 user_id = ds.getKey();
                 user.setID(user_id);
                 user.setEmail(email);
-                user.setName((String)ds.child("name").getValue());
-                user.setSurname((String)ds.child("surname").getValue());
-                user.setTelephone((String)ds.child("telephone").getValue());
-                user.setAddress((String)ds.child("address").getValue());
-                user.setCity((String)ds.child("city").getValue());
                 user.setMac_address((String)ds.child("mac_address").getValue());
+                user.setHeart_rate((String)ds.child("heart_rate").getValue());
+                user.setCurrent_steps((String)ds.child("current_steps").getValue());
                 // tell the application to use this customer id and mail
                 ((HealthApplication)this.getApplication()).setUser(user);
 
@@ -179,7 +172,7 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
     //---------------------------------------------------------------------
     public class LoginButtonListener implements View.OnClickListener{
 
-        private LoginActivity login_activity;
+        private final LoginActivity login_activity;
 
         // class constructor
         public LoginButtonListener(LoginActivity l){
@@ -245,7 +238,7 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
     //---------------------------------------------------------------------
     public class NewCustButtonListener implements View.OnClickListener{
 
-        private LoginActivity login_activity;
+        private final LoginActivity login_activity;
 
         // class constructor
         public NewCustButtonListener(LoginActivity l){
