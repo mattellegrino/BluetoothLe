@@ -23,9 +23,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 
 public class HealthApplication extends Application {
+
+
     private static  DatabaseReference d_reference;
     private static FirebaseAuth f_auth;
-    private User user;
+    private static User user;
     /**
      * Main Application class that initializes and provides access to certain things like
      * logging and DB access.
@@ -67,37 +69,15 @@ public class HealthApplication extends Application {
         context.getSharedPreferences("devicesettings_" + deviceIdentifier, Context.MODE_PRIVATE).edit().clear().apply();
     }
 
-    public static void commit_database_steps(String finaldata) {
-
+    public static void commit_database_macaddress() {
+        d_reference.child(user.getID()).child("mac_address").setValue(user.getMac_address());
     }
 
-
-    private void RetrieveUserInfoAndPush(DataSnapshot customersSnapshot, String email){
-
-        // for each customer
-        for (DataSnapshot ds : customersSnapshot.getChildren()){
-
-            String mail = (String)ds.child("email").getValue();
-
-            // if the current element has the same email as the one written by the user (or last session)
-            if (email.equals(mail)){
-
-                // set the rest id
-                user.setEmail(email);
-                user.setMac_address((String)ds.child("mac_address").getValue());
-                user.setHeart_rate((String)ds.child("heart_rate").getValue());
-                user.setCurrent_steps((String)ds.child("current_steps").getValue());
-                // tell the application to use this customer id and mail
-                setUser(user);
-
-                // Open the reservation list activity
-                Intent intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
-            }
-        }
+    public static void commit_database_csteps(String steps,String current_time) {
+        d_reference.child(user.getID()).child("current_steps").setValue(steps);
+        d_reference.child(user.getID()).child("current_time").setValue(current_time);
     }
-
-    public User getUser() {
+    public static User getUser() {
         return user;
     }
 
@@ -128,5 +108,12 @@ public class HealthApplication extends Application {
     public static void setDatabase(DatabaseReference reference, FirebaseAuth auth) {
         d_reference=reference;
         f_auth=auth;
+    }
+
+    public static DatabaseReference getD_reference() {
+        return d_reference;
+    }
+    public static FirebaseAuth getF_auth() {
+        return f_auth;
     }
 }

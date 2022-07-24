@@ -41,14 +41,13 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
     private FirebaseAuth auth;
 
     private User user;
-
     private CheckBox checkbox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        user = new User("","","","",",");
+        user = new User("","");
 
         // reference to the database's customers root node
         reference = FirebaseDatabase.getInstance().getReference();
@@ -152,8 +151,10 @@ public class LoginActivity extends AppCompatActivity implements ValueEventListen
                 user.setID(user_id);
                 user.setEmail(email);
                 user.setMac_address((String)ds.child("mac_address").getValue());
-                user.setHeart_rate((String)ds.child("heart_rate").getValue());
                 user.setCurrent_steps((String)ds.child("current_steps").getValue());
+                user.setCurrent_heart_rate((String)ds.child("current_heart_rate").getValue());
+                //user.setHeart_rate((String)ds.child("heart_rate").getValue());
+                //user.setCurrent_steps((String)ds.child("current_steps").getValue());
                 // tell the application to use this customer id and mail
                 ((HealthApplication)this.getApplication()).setUser(user);
 

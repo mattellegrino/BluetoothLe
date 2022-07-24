@@ -3,8 +3,8 @@ package com.example.bluetooth.le.sample;
 public class MiBandActivitySample {
 
     private int timestamp;
-    private long deviceId;
-    private long userId;
+    private String deviceId;
+    private String userId;
     private int rawIntensity;
     private int steps;
     private int rawKind;
@@ -13,12 +13,12 @@ public class MiBandActivitySample {
     public MiBandActivitySample() {
     }
 
-    public MiBandActivitySample(int timestamp, long deviceId) {
+    public MiBandActivitySample(int timestamp, String deviceId) {
         this.timestamp = timestamp;
         this.deviceId = deviceId;
     }
 
-    public MiBandActivitySample(int timestamp, long deviceId, long userId, int rawIntensity, int steps, int rawKind, int heartRate) {
+    public MiBandActivitySample(int timestamp, String deviceId, String userId, int rawIntensity, int steps, int rawKind, int heartRate) {
         this.timestamp = timestamp;
         this.deviceId = deviceId;
         this.userId = userId;
@@ -36,19 +36,19 @@ public class MiBandActivitySample {
         this.timestamp = timestamp;
     }
 
-    public long getDeviceId() {
+    public String getDeviceId() {
         return deviceId;
     }
 
-    public void setDeviceId(long deviceId) {
+    public void setDeviceId(String deviceId) {
         this.deviceId = deviceId;
     }
 
-    public long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 

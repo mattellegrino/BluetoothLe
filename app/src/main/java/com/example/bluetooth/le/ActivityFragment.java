@@ -15,6 +15,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.sql.Timestamp;
+
 public class ActivityFragment extends Fragment {
 
     // TODO: Rename parameter arguments, choose names that match
@@ -78,6 +80,7 @@ public class ActivityFragment extends Fragment {
         }
         TextView textView = (TextView) getView().findViewById(R.id.steps_count);
         textView.setText(steps);
+        //TODO decidere dove committare nel database i dati, cioe' quando fare il commit!
     }
 
     @Override

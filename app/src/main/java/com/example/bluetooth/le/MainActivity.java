@@ -16,6 +16,10 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.ValueEventListener;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,10 +40,10 @@ public class MainActivity extends AppCompatActivity {
             TextView deviceaddress= findViewById(R.id.DeviceAddress);
             deviceaddress.setText(sharedprefaddress);
             final Intent intent = new Intent(this, DeviceControlActivity.class);
-            HADevice haDevice = new HADevice("Mi Band 3",sharedprefaddress);
+            HADevice haDevice = HealthApplication.getUser().getHaDevice();
             haDevice.setState(stateEnum);
-            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,"Mi Band 3");
-            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,sharedprefaddress);
+            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,haDevice.getDeviceName());
+            intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,haDevice.getDeviceAddress());
             intent.putExtra(DeviceControlActivity.EXTRA_CONNECT_FIRST_TIME,false);
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE, haDevice);
             startActivity(intent);

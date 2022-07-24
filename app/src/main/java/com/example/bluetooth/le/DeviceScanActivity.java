@@ -219,8 +219,16 @@ public class DeviceScanActivity extends ListActivity {
 
         try
         {
+            // qui creo per la prima volta HADevice
             HADevice haDevice = new HADevice(device.getName(),device.getAddress(),device);
+            HealthApplication.getUser().setHaDevice(haDevice);
+            //TODO da capire se committare ora nel database il macaddress o meno
+            HealthApplication.getUser().setMac_address(haDevice.getDeviceAddress());
+            HealthApplication.commit_database_macaddress();
+
+            //
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_NAME,device.getName());
+
             Log.d("ScanActivity", device.getName() + device.getAddress());
             intent.putExtra(DeviceControlActivity.EXTRAS_DEVICE_ADDRESS,device.getAddress());
             intentPairing.putExtra(DeviceControlActivity.EXTRAS_DEVICE, haDevice);

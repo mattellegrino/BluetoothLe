@@ -46,6 +46,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -620,6 +621,14 @@ public class BluetoothLeService extends Service {
                         sb.append(String.valueOf(value.charAt(i)));
                     }
                     finaldata = sb.toString();
+                    /* ultime modifiche persistenza enrico */
+                    String steps = String.valueOf(Integer.parseInt(finaldata,16));
+                    //TODO dovremmo cambiare e sistemare un po di struttura in bluetoothleservice..
+                    HealthApplication.getUser().setCurrent_steps(steps);
+                    // TODO capire dove fare il commit dei passi, provo qui
+                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+                    HealthApplication.commit_database_csteps(steps,timestamp.toString());
+                    //
                     intent.putExtra(EXTRA_DATA, new String(data) + "\n" + Integer.parseInt(finaldata,16));
                     intent.putExtra("Steps", Integer.parseInt(finaldata,16));
                 }
